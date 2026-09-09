@@ -5,17 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --app-page: #f8fafc;
+  --app-page: #f4f7fb;
   --app-panel: #ffffff;
-  --app-panel-soft: #f8fafc;
-  --app-text: #0f172a;
-  --app-muted: #64748b;
-  --app-border: #e2e8f0;
-  --app-strong: #020617;
-  --app-primary: #0f172a;
-  --app-primary-hover: #1e293b;
+  --app-panel-soft: #eef4fb;
+  --app-text: #10233f;
+  --app-muted: #667892;
+  --app-border: #dce6f2;
+  --app-strong: #071a33;
+  --app-primary: #1769e0;
+  --app-primary-hover: #0d56c7;
   --app-primary-text: #ffffff;
-  --app-focus: rgba(37, 99, 235, 0.16);
+  --app-focus: rgba(23, 105, 224, 0.18);
   color: #0f172a;
   background: #ffffff;
 }
@@ -2613,6 +2613,71 @@ body {
 .dashboard-learning-goal .dashboard-section-heading {
   justify-self: stretch;
   width: 100%;
+}
+
+/* Whole-site refresh: calm, legible, and action-oriented */
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--app-focus); outline-offset: 3px; }
+
+.shell-sidebar {
+  background: var(--app-panel);
+  border-right-color: var(--app-border);
+  border-radius: 0 28px 28px 0;
+  box-shadow: 14px 0 40px rgba(16, 35, 63, 0.08);
+  padding: 1.25rem;
+}
+.shell-sidebar-brand-row, .shell-sidebar-toggle, .shell-profile-trigger {
+  background: var(--app-panel);
+  border-color: var(--app-border);
+}
+.shell-sidebar-brand .shell-logo-mark { background: var(--app-primary); }
+.shell-sidebar-brand .shell-brand-kicker, .shell-sidebar-brand .shell-brand-title { color: var(--app-strong); }
+.shell-sidebar-link { border-radius: 14px; color: var(--app-muted); min-height: 2.85rem; }
+.shell-sidebar-link:hover { background: #eaf2ff; color: var(--app-primary); }
+.shell-sidebar-link.active { background: var(--app-primary); box-shadow: 0 12px 24px rgba(23, 105, 224, 0.2); }
+.shell-topbar { background: color-mix(in srgb, var(--app-page) 88%, transparent); border-bottom-color: var(--app-border); backdrop-filter: blur(18px); }
+.shell-page-title { color: var(--app-strong); font-size: 1.05rem; letter-spacing: -0.02em; }
+.shell-content-frame { padding-top: 5.75rem; }
+
+.card-panel, .dashboard-card, .dashboard-hero, .dashboard-filter-card, .dashboard-stat-card, .dashboard-metric-card {
+  border-color: var(--app-border);
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(16, 35, 63, 0.06);
+}
+.field-input, .dashboard-field select { border-color: var(--app-border); border-radius: 12px; }
+.primary-button { background: var(--app-primary); border-color: var(--app-primary); border-radius: 12px; box-shadow: 0 10px 22px rgba(23, 105, 224, 0.18); }
+.primary-button:hover { background: var(--app-primary-hover); }
+.secondary-button { border-color: var(--app-border); border-radius: 12px; color: var(--app-text); }
+
+.home-page { background: var(--app-page); color: var(--app-text); }
+.home-shell { max-width: 1200px; }
+.home-header { background: color-mix(in srgb, var(--app-page) 88%, transparent); border-bottom-color: var(--app-border); backdrop-filter: blur(18px); }
+.home-brand-title, .home-hero h1 { color: var(--app-strong); }
+.home-hero h1 { letter-spacing: -0.045em; line-height: 1.04; }
+.home-eyebrow { color: var(--app-primary); letter-spacing: 0.14em; }
+.home-hero-copy > p:not(.home-eyebrow) { color: var(--app-muted); line-height: 1.75; }
+.home-image-frame { border-color: var(--app-border); border-radius: 24px; box-shadow: 0 20px 48px rgba(16, 35, 63, 0.1); }
+.home-momentum-panel, .home-feature-card { background: var(--app-panel); border-color: var(--app-border); border-radius: 20px; box-shadow: 0 12px 30px rgba(16, 35, 63, 0.06); }
+.home-feature-card:hover { border-color: #9ec4f4; transform: translateY(-3px); }
+
+[data-theme="dark"] .shell-sidebar,
+[data-theme="dark"] .shell-sidebar-brand-row,
+[data-theme="dark"] .shell-sidebar-toggle,
+[data-theme="dark"] .shell-profile-trigger,
+[data-theme="dark"] .card-panel,
+[data-theme="dark"] .dashboard-card,
+[data-theme="dark"] .dashboard-hero,
+[data-theme="dark"] .dashboard-filter-card,
+[data-theme="dark"] .dashboard-stat-card,
+[data-theme="dark"] .dashboard-metric-card,
+[data-theme="dark"] .home-momentum-panel,
+[data-theme="dark"] .home-feature-card { background: var(--app-panel); border-color: var(--app-border); }
+[data-theme="dark"] .shell-sidebar-link:hover { background: rgba(96, 165, 250, 0.14); color: #bfdbfe; }
+[data-theme="dark"] .home-header { background: rgba(8, 17, 31, 0.88); }
+
+@media (max-width: 900px) {
+  .shell-sidebar { border-radius: 0 22px 22px 0; }
+  .shell-content-frame { padding-top: 5.25rem; }
 }
 
 .dashboard-goal-list,
