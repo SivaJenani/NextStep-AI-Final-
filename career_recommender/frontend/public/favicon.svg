@@ -1,0 +1,30 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="nsGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#03254C"/>
+      <stop offset="60%" stop-color="#118AB2"/>
+      <stop offset="100%" stop-color="#06D6A0"/>
+    </linearGradient>
+  </defs>
+  
+  <g fill="url(#nsGradient)">
+    <!-- Stylized 'N' turning into an upward arrow -->
+    <path d="
+      M 20 75 
+      L 35 75 
+      L 45 45 
+      L 55 65 
+      L 75 25 
+      L 65 25 
+      L 65 15 
+      L 85 15 
+      L 85 35 
+      L 75 35 
+      L 55 75
+      L 45 55
+      L 30 75
+      Z" />
+    <!-- Floating dot -->
+    <circle cx="75" cy="5" r="4" fill="#06D6A0" />
+  </g>
+</svg>
