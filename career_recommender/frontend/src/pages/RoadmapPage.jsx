@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
-import RoadmapLearningProgress from "../components/RoadmapLearningProgress";
 import RoadmapTimeline from "../components/RoadmapTimeline";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 import { correctRoleSpelling } from "../utils/opportunityMode";
@@ -1829,31 +1828,31 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
         </div>
       </div>
 
-      <div className="card-panel overflow-hidden border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-night text-white print:border-0 print:shadow-none print:p-0">
-        <div className="bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.42),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.28),transparent_24%)] p-6">
-          <div className="rounded-[30px] border border-white/10 bg-black/10 p-6 backdrop-blur-sm">
+      <div className="card-panel overflow-hidden border-slate-200 bg-white text-slate-950 shadow-[0_18px_45px_rgba(15,23,42,0.06)] print:border-0 print:shadow-none print:p-0">
+        <div className="bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_24%)] p-6">
+          <div className="rounded-[30px] border border-slate-200 bg-white/80 p-6 backdrop-blur-sm">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-200">Interview Prep Board</p>
-              <h2 className="mt-3 text-3xl font-bold text-white sm:text-4xl capitalize">{targetRole || interviewPack.job_role}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-100">
+              <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-700">Interview Prep Board</p>
+              <h2 className="mt-3 text-3xl font-bold text-slate-950 sm:text-4xl capitalize">{targetRole || interviewPack.job_role}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
                 A cleaner prep experience for technical and HR rounds. Review the likely prompts, rehearse with a structure,
                 and use the resource stack on the right before applying or scheduling mocks.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Technical</p>
-                <p className="mt-2 text-2xl font-bold">{interviewPack.technical_questions.length}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Technical</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{interviewPack.technical_questions.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">HR</p>
-                <p className="mt-2 text-2xl font-bold">{interviewPack.hr_questions.length}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">HR</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{interviewPack.hr_questions.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Resources</p>
-                <p className="mt-2 text-2xl font-bold">{interviewPack.coding_practice_links.length}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Resources</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950">{interviewPack.coding_practice_links.length}</p>
               </div>
             </div>
           </div>
@@ -2037,7 +2036,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
   );
 }
 
-export default function RoadmapPage() {
+export default function RoadmapPage({ view = "roadmap" }) {
   const navigate = useNavigate();
   const pageRef = useRef(null);
 
@@ -2355,6 +2354,20 @@ if (needsProfile) {
     );
   }
 
+if (view === "interview") {
+    return (
+      <div className="space-y-6 print:space-y-4">
+        {message && <p className="text-sm font-semibold text-slate-600">{message}</p>}
+        {interviewPack ? (
+          <InterviewPrepSection interviewPack={interviewPack} targetRole={targetRole} />
+        ) : (
+          <div className="card-panel text-center text-sm text-slate-600">Interview preparation is not available yet. Try refreshing the page.</div>
+        )}
+        <ScrollToTopButton />
+      </div>
+    );
+  }
+
 return (
     <div ref={pageRef} className="space-y-6 print:space-y-4">
       <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] p-6 shadow-[0_20px_45px_rgba(15,23,42,0.06)] print:border-0 print:shadow-none">
@@ -2446,13 +2459,6 @@ return (
             tone="slate"
           />
         </section>
-      )}
-
-      {roadmap && (
-        <RoadmapLearningProgress
-          currentScore={roadmap.outcome.current_readiness_score}
-          projectedScore={roadmap.outcome.projected_readiness_score}
-        />
       )}
 
       {roadmap && (
@@ -2698,8 +2704,6 @@ return (
         </section>
       )}
 
-      {interviewPack && <InterviewPrepSection interviewPack={interviewPack} targetRole={roadmap?.target_role || targetRole} />}
-      
       <ScrollToTopButton />
     </div>
   );

@@ -98,6 +98,14 @@ export default function App() {
           }
         />
         <Route
+          path="/interview-prep"
+          element={
+            <ProtectedRoute>
+              <RoadmapPage view="interview" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/bookmarks"
           element={
             <ProtectedRoute>

@@ -75,6 +75,16 @@ class Bookmark(Base):
     user = relationship("User", back_populates="bookmarks")
 
 
+class RecommendationInteraction(Base):
+    __tablename__ = "recommendation_interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_id = Column(String(160), nullable=False, index=True)
+    action = Column(String(20), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
 class Job(Base):
     __tablename__ = "jobs"
 

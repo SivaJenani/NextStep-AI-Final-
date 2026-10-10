@@ -88,9 +88,9 @@ export function buildSkillDetail(skill, status, family, demand = 0) {
 /* ------------------------------------------------------------------ */
 
 export function getDemandTrend(demand) {
-  if (demand >= 14) return { label: "↑ Trending", tone: "up" };
-  if (demand <= 2) return { label: "↓ Declining", tone: "down" };
-  return { label: "→ Stable", tone: "stable" };
+  if (demand >= 14) return { label: "Many signals", tone: "up" };
+  if (demand <= 2) return { label: "Few signals", tone: "down" };
+  return { label: "Some signals", tone: "stable" };
 }
 
 /* ------------------------------------------------------------------ */

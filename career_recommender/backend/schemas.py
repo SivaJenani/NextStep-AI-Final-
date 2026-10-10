@@ -459,6 +459,7 @@ class DashboardResponse(BaseModel):
     quick_win_skills: list[SkillQuickWin] = Field(default_factory=list)
     micro_gap_summary: dict[str, int] = Field(default_factory=dict)
     skill_dna_profiles: list[SkillDnaProfile] = Field(default_factory=list)
+    analyzed_listing_count: int = 0
 
 
 class BookmarkCreate(BaseModel):
@@ -572,8 +573,7 @@ class SemanticRecommendResponse(BaseModel):
 
 
 class FeedbackEvent(BaseModel):
-    user_id: str
-    job_id: str
+    job_id: str = Field(..., min_length=1, max_length=160)
     action: Literal["view", "click", "apply", "dismiss"]
 
 

@@ -26,7 +26,7 @@ function SkillRadarTooltip({ active, payload }) {
     <div className="dashboard-chart-tooltip">
       <strong>{item.family}</strong>
       <span>Current strength: <strong>{item.current}%</strong></span>
-      <span>Industry expected: <strong>{item.expected}%</strong></span>
+      <span>Role benchmark (estimate): <strong>{item.expected}%</strong></span>
       <span>Match Gap: <strong>{item.gap}%</strong></span>
       <em>Missing skills: {item.missingSkills.length ? item.missingSkills.slice(0, 4).map(titleCase).join(", ") : "None"}</em>
     </div>
@@ -34,19 +34,19 @@ function SkillRadarTooltip({ active, payload }) {
 }
 
 function getDemandLevel(demand, percentage) {
-  if (demand <= 0) return { label: "No Demand", tone: "none" };
-  if (percentage >= 45 || demand >= 16) return { label: "Very High", tone: "very-high" };
-  if (percentage >= 25 || demand >= 8) return { label: "High", tone: "high" };
-  if (percentage >= 10 || demand >= 3) return { label: "Medium", tone: "medium" };
-  return { label: "Low", tone: "low" };
+  if (demand <= 0) return { label: "No mentions", tone: "none" };
+  if (percentage >= 45 || demand >= 16) return { label: "Many signals", tone: "very-high" };
+  if (percentage >= 25 || demand >= 8) return { label: "Frequent signals", tone: "high" };
+  if (percentage >= 10 || demand >= 3) return { label: "Some signals", tone: "medium" };
+  return { label: "Few signals", tone: "low" };
 }
 
 function getDemandInsight(item, isTopDemand = false) {
-  if (isTopDemand) return "Most companies currently prioritize this skill family.";
-  if (item.demand <= 0) return "No active job demand is visible for this family right now.";
-  if (item.percentage >= 25) return "Strong hiring signal with meaningful market pull.";
-  if (item.percentage >= 10) return "Steady demand, useful as a supporting skill family.";
-  return "Niche signal; learn after stronger demand areas.";
+  if (isTopDemand) return "Largest combined skill signal in this set of matching listings.";
+  if (item.demand <= 0) return "No skill signals in the analyzed listings.";
+  if (item.percentage >= 25) return "One of the stronger skill signals in this result set.";
+  if (item.percentage >= 10) return "A moderate skill signal in this result set.";
+  return "A smaller skill signal in this result set.";
 }
 
 function DemandTooltip({ active, payload }) {
@@ -55,8 +55,8 @@ function DemandTooltip({ active, payload }) {
   return (
     <div className="dashboard-chart-tooltip">
       <strong>{item.family}</strong>
-      <span>Job Count: <strong>{item.jobs}</strong></span>
-      <span>Percentage: <strong>{item.percentage}%</strong></span>
+      <span>Matching listings: <strong>{item.jobs}</strong></span>
+      <span>Share of skill signals: <strong>{item.percentage}%</strong></span>
       <span>Rank: <strong>#{item.rank}</strong></span>
       <em>{item.insight}</em>
     </div>
@@ -120,7 +120,7 @@ function buildVisualizationInsights({ bestFamily, largestGap, highestDemand, mod
     {
       icon: AlertTriangle,
       title: "Largest skill gap",
-      detail: `${largestGap?.family || "A priority family"} has a ${largestGap?.gap || 0}% gap. Closing it will improve recruiter fit fastest.`,
+      detail: `${largestGap?.family || "A priority family"} has the largest estimated gap (${largestGap?.gap || 0}%). Consider reviewing its missing skills first.`,
       priority: largestGap?.gap >= 35 ? "High" : "Medium",
     },
     {
@@ -132,7 +132,7 @@ function buildVisualizationInsights({ bestFamily, largestGap, highestDemand, mod
     {
       icon: Zap,
       title: "Fastest skill to learn",
-      detail: `${fastestSkill} can be completed in about ${estimateHours(model.fastestSkill, highestDemand?.demand || 4)} focused hours.`,
+      detail: `${fastestSkill} has a rough study-time estimate of about ${estimateHours(model.fastestSkill, highestDemand?.demand || 4)} focused hours.`,
       priority: "Medium",
     },
     {
@@ -143,8 +143,8 @@ function buildVisualizationInsights({ bestFamily, largestGap, highestDemand, mod
     },
     {
       icon: Gauge,
-      title: "Estimated match improvement",
-      detail: `Completing the suggested skills may improve job match by about ${model.estimatedLift}% based on current gap signals.`,
+      title: "Potential next step",
+      detail: `Learning ${inDemandMissing} and showing it in a project may strengthen your fit. Actual outcomes depend on the role and hiring team.`,
       priority: "Medium",
     },
   ];
@@ -200,9 +200,9 @@ export default function Charts({ model }) {
   const quickStats = [
     {
       icon: TrendingUp,
-      label: "Highest Demand Skill",
+      label: "Strongest skill signal",
       value: highestDemandSkill,
-      description: `${highestDemand?.family || "Skill family"} leads with ${highestDemand?.demand || 0} signals`,
+      description: `Seen in ${highestDemand?.jobs || 0} analyzed matching listings`,
     },
     {
       icon: AlertTriangle,
@@ -218,9 +218,9 @@ export default function Charts({ model }) {
     },
     {
       icon: Briefcase,
-      label: "Total Job Signals",
+      label: "Total skill signals",
       value: totalJobSignals,
-      description: "Combined demand across families",
+      description: "Combined signals counted in this result set",
     },
     {
       icon: Gauge,
@@ -230,9 +230,9 @@ export default function Charts({ model }) {
     },
     {
       icon: Zap,
-      label: "Fastest Skill to Learn",
+      label: "Quick skill to focus on",
       value: fastestSkill,
-      description: `${estimateHours(model.fastestSkill, highestDemand?.demand || 4)} hours estimated`,
+      description: `Roughly ${estimateHours(model.fastestSkill, highestDemand?.demand || 4)} study hours`,
     },
   ];
 
@@ -291,16 +291,16 @@ export default function Charts({ model }) {
             <div>
               <span>Best Next Focus</span>
               <strong>{highestDemand?.family || "No data"}</strong>
-              <small>{highestDemand?.demand || 0} demand signals</small>
+              <small>{highestDemand?.demand || 0} combined skill signals in this set</small>
             </div>
           </div>
         </VisualPanel>
 
-        <VisualPanel title="Job Demand Ranking (Bar)" className="dashboard-visual-card-large dashboard-demand-ranking-panel">
+        <VisualPanel title="Skill Signals in Matching Listings" className="dashboard-visual-card-large dashboard-demand-ranking-panel">
           <div className="dashboard-demand-section-summary">
-            <span>{totalJobSignals} demand signals</span>
+            <span>{totalJobSignals} combined skill signals</span>
             <span>{activeDemandFamilies.length} active families</span>
-            {topDemand ? <strong>{topDemand.family} leads at {topDemand.percentage}%</strong> : <strong>No active demand yet</strong>}
+            {topDemand ? <strong>{topDemand.family} leads at {topDemand.percentage}%</strong> : <strong>No skill signals yet</strong>}
           </div>
           <ResponsiveContainer width="100%" height={205}>
             <BarChart data={demandData} layout="vertical" margin={{ top: 4, right: 86, bottom: 2, left: 12 }}>
@@ -343,7 +343,7 @@ export default function Charts({ model }) {
                 </div>
                 <div className="demand-item-rank-row">
                   <span>#{item.rank}</span>
-                  {item.isTopDemand ? <span className="top-demand-badge">Top Demand</span> : null}
+                  {item.isTopDemand ? <span className="top-demand-badge">Top Signal</span> : null}
                 </div>
                 <div className="demand-item-details">
                   <span>Jobs <strong>{item.jobs}</strong></span>
@@ -354,9 +354,9 @@ export default function Charts({ model }) {
             ))}
           </div>
           <div className="dashboard-demand-insights-panel">
-            <div><span>Highest Demand</span><strong title={topDemand?.family || "No data"}>{topDemand?.family || "No data"}</strong></div>
-            <div><span>Lowest Demand</span><strong title={lowestDemand?.family || "No data"}>{lowestDemand?.family || "No data"}</strong></div>
-            <div><span>Total Jobs Analyzed</span><strong>{demandData.reduce((total, item) => total + item.jobs, 0)}</strong></div>
+            <div><span>Largest signal</span><strong title={topDemand?.family || "No data"}>{topDemand?.family || "No data"}</strong></div>
+            <div><span>Smallest signal</span><strong title={lowestDemand?.family || "No data"}>{lowestDemand?.family || "No data"}</strong></div>
+            <div><span>Matching listings analyzed</span><strong>{model.analyzedListingCount}</strong></div>
             <div><span>Active Skill Families</span><strong>{activeDemandFamilies.length}</strong></div>
             <div><span>Learning Priority</span><strong title={suggestedDemandPriority}>{suggestedDemandPriority}</strong></div>
           </div>

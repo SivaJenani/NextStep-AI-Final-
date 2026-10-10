@@ -24,6 +24,7 @@ const privateNavItems = [
   { label: "Recommendations", to: "/recommendations", Icon: Sparkles },
   { label: "Skill Gap", to: "/skill-gap", Icon: Lightbulb },
   { label: "Roadmap", to: "/roadmap", Icon: Map },
+  { label: "Interview Prep", to: "/interview-prep", Icon: Bot },
   { label: "Resume", to: "/resume", Icon: FileText },
   { label: "Bookmarks", to: "/bookmarks", Icon: Bookmark },
   { label: "AI Mentor", to: "/chatbot", Icon: Bot },

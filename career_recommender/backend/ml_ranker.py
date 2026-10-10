@@ -1,4 +1,5 @@
 import re
+import math
 from collections import Counter
 from typing import Iterable
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -1332,12 +1333,43 @@ def rank_jobs(profile, jobs: list[dict], top_n: int = 10) -> dict:
     matrix = vectorizer.fit_transform([profile_doc, *job_docs])
     similarities = cosine_similarity(matrix[0:1], matrix[1:]).flatten()
 
+    # BM25 complements TF-IDF: TF-IDF captures broad profile/job overlap,
+    # while BM25 rewards distinctive profile terms without over-rewarding repetition.
+    tokenized_docs = [re.findall(r"[a-z0-9+#.]+", doc.lower()) for doc in job_docs]
+    query_terms = re.findall(r"[a-z0-9+#.]+", profile_doc.lower())
+    doc_lengths = [len(tokens) for tokens in tokenized_docs]
+    average_length = sum(doc_lengths) / max(len(doc_lengths), 1)
+    document_frequency = Counter(
+        term for tokens in tokenized_docs for term in set(tokens)
+    )
+    bm25_scores = []
+    for tokens, length in zip(tokenized_docs, doc_lengths):
+        frequencies = Counter(tokens)
+        score = 0.0
+        for term in query_terms:
+            frequency = frequencies.get(term, 0)
+            if not frequency:
+                continue
+            df = document_frequency[term]
+            idf = math.log(1 + (len(job_docs) - df + 0.5) / (df + 0.5))
+            denominator = frequency + 1.5 * (1 - 0.75 + 0.75 * length / max(average_length, 1))
+            score += idf * frequency * 2.5 / denominator
+        bm25_scores.append(score)
+    max_bm25 = max(bm25_scores, default=0.0)
+    normalized_bm25 = [score / max_bm25 if max_bm25 else 0.0 for score in bm25_scores]
+    lexical_scores = [
+        0.6 * float(tfidf) + 0.4 * bm25
+        for tfidf, bm25 in zip(similarities, normalized_bm25)
+    ]
+
     overall_matched = Counter()
     overall_missing = Counter()
     trending = Counter()
     scored_jobs = []
 
-    for job, similarity, job_doc in zip(jobs, similarities, job_docs):
+    for job, similarity, bm25_score, lexical_score, job_doc in zip(
+        jobs, similarities, normalized_bm25, lexical_scores, job_docs
+    ):
         role_skills = normalize_skills(job.get("role_skills", []))
         extracted_skills = extract_skills_from_text(job_doc)
         title_skills = extract_skills_from_text(job.get("job_title", ""))
@@ -1357,7 +1389,7 @@ def rank_jobs(profile, jobs: list[dict], top_n: int = 10) -> dict:
         base_denominator = len(job_skills) if job_skills else max(len(profile_skills), 1)
         exact_skill_match = round((len(matched) / base_denominator) * 100, 2)
         skill_match = exact_skill_match
-        ai_score = round(float(similarity) * 100, 2)
+        ai_score = round(float(lexical_score) * 100, 2)
         experience_score = _experience_alignment(profile.experience_level, job_doc)
         domain_score = _domain_alignment(profile.domain, job_doc)
         startup_score = _startup_alignment(job_doc, job.get("company_name", ""))
@@ -1375,7 +1407,8 @@ def rank_jobs(profile, jobs: list[dict], top_n: int = 10) -> dict:
         enriched = {
             **job,
             "ai_score": ranking_score,
-            "semantic_score": ai_score,
+            "semantic_score": round(float(similarity) * 100, 2),
+            "bm25_score": round(float(bm25_score) * 100, 2),
             "skill_match_percentage": skill_match,
             "exact_skill_match_percentage": exact_skill_match,
             "matched_skills": matched[:6],

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { COURSE_CATALOG, LEGACY_COURSE_TITLE_ALIASES } from "../constants/courseCatalog";
 import {
   Area,
@@ -56,6 +56,10 @@ function DetailBlock({
       <div className="mt-3">
         {items?.length ? (
           isSkill ? (
+            <>
+            <div className="hidden">
+              <span className="font-bold text-slate-800">Skill levels:</span> L1 foundation · L2 developing · L3 working proficiency. “Current” is your estimated level; “Required” is the level this roadmap step expects.
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {items.map((skill, idx) => {
                 const currentLevel = isDone ? "L3" : "L1";
@@ -73,8 +77,8 @@ function DetailBlock({
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
-                      <span>Cur: {currentLevel}</span>
-                      <span>Req: {requiredLevel}</span>
+                      <span title="Your estimated current skill level">Current: {currentLevel}</span>
+                      <span title="Level expected for this roadmap step">Required: {requiredLevel}</span>
                     </div>
                     
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -89,6 +93,7 @@ function DetailBlock({
                 );
               })}
             </div>
+            </>
           ) : (
             <PillList items={items} className={className} formatItem={formatItem} getItemHref={getItemHref} />
           )
@@ -340,7 +345,16 @@ function LearningResourceList({ items, onOpenVideo, stepId, learningProgress = {
                   ? "Article"
                   : "Resource";
 
-        const resourceId = `res-${stepId || "step"}-${index}`;
+        // Use the resource identity rather than only its array index. Roadmaps can
+        // be regenerated with a different order, and index-only keys can apply a
+        // previous course's progress to the wrong course.
+        const resourceIdentity = [normalized.title, normalized.url, normalized.provider]
+          .filter(Boolean)
+          .join("-")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || `item-${index}`;
+        const resourceId = `res-${stepId || "step"}-${resourceIdentity}`;
         const resData = learningProgress[resourceId] || {
           started_date: "",
           completed_date: "",
@@ -888,6 +902,43 @@ export default function RoadmapTimeline({
           </div>
         </div>
 
+        <nav aria-label="Roadmap steps" className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-3 print:hidden">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-2">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Roadmap path</p>
+            <p className="text-xs text-slate-500">Select a step to jump to its details</p>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {roadmap.steps.map((step, index) => {
+              const stepId = `step-${index}`;
+              const isDone = progress[stepId];
+
+              return (
+                <a
+                  key={`shortlink-${stepId}`}
+                  href={`#roadmap-step-${index}`}
+                  className="group flex min-w-[190px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-blue-300 hover:shadow-sm"
+                >
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                      isDone ? "bg-emerald-500 text-white" : "bg-slate-900 text-white"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-slate-800 group-hover:text-blue-700">
+                      {step.role_title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-slate-500">
+                      {step.cumulative_timeline || step.time_estimate}
+                    </span>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </nav>
+
         {/* Timeline with connector line */}
         <div className="relative mt-8 space-y-5">
           {/* Vertical connector line */}
@@ -900,6 +951,7 @@ export default function RoadmapTimeline({
             return (
               <div
                 key={stepId}
+                id={`roadmap-step-${index}`}
                 className={`relative overflow-hidden rounded-[30px] border p-6 transition duration-300 ${
                   isDone
                     ? "border-emerald-200 bg-white shadow-[0_18px_40px_rgba(16,185,129,0.08)]"
@@ -1024,7 +1076,11 @@ export default function RoadmapTimeline({
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs leading-5 text-slate-600">
+                  <span className="font-bold text-slate-800">Skill levels:</span> L1 foundation · L2 developing · L3 working proficiency. “Current” is your estimated level; “Required” is the level this roadmap step expects.
+                </div>
+
+                <div className="mt-3 grid gap-4 lg:grid-cols-2">
                   <DetailBlock
                     title="Technical Skills"
                     items={step.technical_skills}
@@ -1216,7 +1272,9 @@ function ProjectItemEditor({ project, projId, pidx, pdata, onUpdateProject, onAn
   const [notes, setNotes] = useState(pdata?.notes || "");
   const [completedDate, setCompletedDate] = useState(pdata?.completed_date || "");
   const [analysis, setAnalysis] = useState(null);
+  const [analysisError, setAnalysisError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const lastAnalyzedRepo = useRef("");
 
   useEffect(() => {
     setStatus(pdata?.status || "Not Started");
@@ -1240,12 +1298,26 @@ function ProjectItemEditor({ project, projId, pidx, pdata, onUpdateProject, onAn
 
   const handleAnalyze = async () => {
     if (!onAnalyzeProject) return;
+    const normalizedRepo = repo.trim();
+    if (!normalizedRepo) {
+      setAnalysis(null);
+      setAnalysisError("Add a GitHub repository link before analyzing the project.");
+      return;
+    }
+    if (!/^https?:\/\/(www\.)?github\.com\//i.test(normalizedRepo)) {
+      setAnalysis(null);
+      setAnalysisError("Enter a valid GitHub repository URL.");
+      return;
+    }
     try {
       setAnalyzing(true);
-      const data = await onAnalyzeProject(projId, { status, repo, demo, notes, completed_date: completedDate });
+      setAnalysisError("");
+      const data = await onAnalyzeProject(projId, { status, repo: normalizedRepo, demo, notes, completed_date: completedDate });
       setAnalysis(data);
+      lastAnalyzedRepo.current = normalizedRepo;
     } catch {
-      // ignore
+      setAnalysis(null);
+      setAnalysisError("Unable to evaluate this repository right now.");
     } finally {
       setAnalyzing(false);
     }
@@ -1304,14 +1376,24 @@ function ProjectItemEditor({ project, projId, pidx, pdata, onUpdateProject, onAn
           <input
             type="text"
             value={repo}
-            onChange={(e) => setRepo(e.target.value)}
-            onBlur={handleSave}
+            onChange={(e) => {
+              setRepo(e.target.value);
+              setAnalysis(null);
+              setAnalysisError("");
+            }}
+            onBlur={() => {
+              handleSave();
+              const normalizedRepo = repo.trim();
+              if (normalizedRepo && normalizedRepo !== lastAnalyzedRepo.current && /^https?:\/\/(www\.)?github\.com\//i.test(normalizedRepo)) {
+                handleAnalyze();
+              }
+            }}
             placeholder="https://github.com/..."
             className="field-input text-xs"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-bold uppercase text-slate-400">Live Demo</label>
+          <label className="text-[10px] font-bold uppercase text-slate-400">Live Demo <span className="normal-case font-medium text-slate-400">(optional)</span></label>
           <input
             type="text"
             value={demo}
@@ -1324,7 +1406,7 @@ function ProjectItemEditor({ project, projId, pidx, pdata, onUpdateProject, onAn
       </div>
 
       <div className="space-y-1">
-        <label className="text-[10px] font-bold uppercase text-slate-400">Project Notes</label>
+        <label className="text-[10px] font-bold uppercase text-slate-400">Project Notes <span className="normal-case font-medium text-slate-400">(optional)</span></label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -1338,12 +1420,14 @@ function ProjectItemEditor({ project, projId, pidx, pdata, onUpdateProject, onAn
         <button
           type="button"
           onClick={handleAnalyze}
-          disabled={analyzing}
+          disabled={analyzing || !repo.trim()}
           className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 text-white px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition"
         >
           {analyzing ? "Evaluating..." : "Analyze Project"}
         </button>
       </div>
+
+      {analysisError ? <p className="text-[11px] font-semibold text-rose-600">{analysisError}</p> : !repo.trim() && <p className="text-[11px] text-slate-500">Only the GitHub link is needed. Live demo and notes are optional.</p>}
 
       {analysis && (
         <div className="mt-3 bg-blue-50/50 rounded-xl border border-blue-100 p-3 space-y-2 text-xs">

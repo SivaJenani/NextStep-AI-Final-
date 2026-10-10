@@ -110,10 +110,10 @@ export function SkillModal({ detail, onClose }) {
               {detail.status === "missing" && <XCircle size={13} className="inline mr-1 align-text-top" />}
               {titleCase(detail.status)}
             </span>
-            {detail.family && <span className="dashboard-skill-family-badge" contentEditable suppressContentEditableWarning>{detail.family}</span>}
+            {detail.family && <span className="dashboard-skill-family-badge">{detail.family}</span>}
           </div>
-          <h2 contentEditable suppressContentEditableWarning>{titleCase(detail.skill)}</h2>
-          <p className="dashboard-skill-hero-desc" contentEditable suppressContentEditableWarning>{detail.description}</p>
+          <h2>{titleCase(detail.skill)}</h2>
+          <p className="dashboard-skill-hero-desc">{detail.description}</p>
         </div>
 
         <div className="dashboard-skill-why-spotlight">
@@ -121,8 +121,8 @@ export function SkillModal({ detail, onClose }) {
             <Target size={20} />
           </div>
           <div className="dashboard-skill-why-content">
-            <h4 contentEditable suppressContentEditableWarning>Why recruiters look for this</h4>
-            <p contentEditable suppressContentEditableWarning>{detail.why}</p>
+            <h4>Why recruiters look for this</h4>
+            <p>{detail.why}</p>
           </div>
         </div>
 
@@ -130,15 +130,15 @@ export function SkillModal({ detail, onClose }) {
           <div className="dashboard-skill-meta-card">
             <div className="dashboard-skill-meta-icon"><Gauge size={20} /></div>
             <div className="dashboard-skill-meta-info">
-              <span contentEditable suppressContentEditableWarning>Learning Difficulty</span>
-              <strong contentEditable suppressContentEditableWarning>{detail.difficulty}</strong>
+              <span>Learning Difficulty</span>
+              <strong>{detail.difficulty}</strong>
             </div>
           </div>
           <div className="dashboard-skill-meta-card">
             <div className="dashboard-skill-meta-icon"><Clock size={20} /></div>
             <div className="dashboard-skill-meta-info">
-              <span contentEditable suppressContentEditableWarning>Estimated Study Time</span>
-              <strong contentEditable suppressContentEditableWarning>{detail.time}</strong>
+              <span>Rough study-time estimate</span>
+              <strong>{detail.time}</strong>
             </div>
           </div>
         </div>
@@ -151,9 +151,9 @@ export function SkillModal({ detail, onClose }) {
                 <div className="dashboard-resource-card-main">
                   <BookOpen size={18} className="dashboard-resource-icon" />
                   <div className="dashboard-resource-info">
-                    <span className="dashboard-resource-platform" contentEditable suppressContentEditableWarning>{resource.platform}</span>
-                    <strong className="dashboard-resource-title" contentEditable suppressContentEditableWarning>{resource.title}</strong>
-                    {resource.note && <span className="dashboard-resource-note" contentEditable suppressContentEditableWarning>{resource.note}</span>}
+                    <span className="dashboard-resource-platform">{resource.platform}</span>
+                    <strong className="dashboard-resource-title">{resource.title}</strong>
+                    {resource.note && <span className="dashboard-resource-note">{resource.note}</span>}
                   </div>
                 </div>
                 <div className="dashboard-resource-card-action">
@@ -175,7 +175,7 @@ export function SkillModal({ detail, onClose }) {
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
-                <span contentEditable suppressContentEditableWarning style={{ display: 'block', width: '100%' }}>{project}</span>
+                <span style={{ display: 'block', width: '100%' }}>{project}</span>
               </li>
             ))}
           </ul>

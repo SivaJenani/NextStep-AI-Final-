@@ -85,6 +85,7 @@ export function buildDashboardModel(dashboard, filters) {
   return {
     activeProfile,
     allFamilyGaps,
+    analyzedListingCount: Number(dashboard?.analyzed_listing_count || 0),
     atsScore,
     demandData,
     estimatedLift,

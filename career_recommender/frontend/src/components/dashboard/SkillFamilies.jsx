@@ -40,9 +40,9 @@ function SkillFamilyCard({ family, expanded, onToggle, onOpenSkill }) {
       </button>
       <div className="dashboard-family-metrics">
         <div><span>Current strength</span><strong>{Math.round(family.current_level)}%</strong></div>
-        <div><span>Industry expectation</span><strong>{Math.round(family.target_level)}%</strong></div>
+        <div><span>Role benchmark (estimate)</span><strong>{Math.round(family.target_level)}%</strong></div>
         <div><span>Gap</span><strong>{Math.round(family.gap_level)}%</strong></div>
-        <div><span>Job demand</span><strong>{family.demand_count}</strong></div>
+        <div><span>Skill signals</span><strong>{family.demand_count}</strong></div>
       </div>
       <ProgressBar value={family.current_level} tone={tone} />
       <div className="dashboard-family-next">

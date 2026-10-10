@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import client from "../api/client";
+import { useAuth } from "../context/AuthContext";
 import { DashboardSkeleton } from "../components/skeletons/PageSkeleton";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 import CareerOverview from "../components/dashboard/CareerOverview";
@@ -23,6 +24,7 @@ import { EmptyState } from "../components/dashboard/shared";
 import { buildDashboardModel, DEFAULT_FILTERS } from "../components/dashboard/model";
 
 export default function DashboardPage({ view = "dashboard" }) {
+  const { user } = useAuth();
   const [dashboard, setDashboard] = useState(null);
   const [profile, setProfile] = useState(null);
   const [message, setMessage] = useState("");
@@ -111,10 +113,47 @@ export default function DashboardPage({ view = "dashboard" }) {
       <div className="dashboard-page">
         {message && <div className="dashboard-message">{message}</div>}
         <div className="dashboard-top-actions">
-          <DashboardFilters filters={filters} onChange={setFilters} onReset={profileFilters} model={model} />
-          <ExportOptions model={model} />
+          <DashboardFilters filters={filters} onChange={setFilters} onReset={profileFilters} model={model} skillGapOnly />
         </div>
         {dashboard ? (
+          <>
+          <section className="dashboard-card dashboard-profile-context mb-4">
+            <div className="dashboard-section-heading compact">
+              <span>Your profile context</span>
+              <span className="dashboard-muted">Used for this analysis</span>
+            </div>
+            <div className="dashboard-profile-context-grid">
+              <div>
+                <small>Name</small>
+                <strong>{user?.full_name || user?.email?.split("@")[0] || "Career profile"}</strong>
+              </div>
+              <div>
+                <small>Target role</small>
+                <strong>{profile?.desired_role || "Not set"}</strong>
+              </div>
+              <div>
+                <small>Experience</small>
+                <strong>{profile?.experience_level || "Not set"}{profile?.years_of_experience ? ` · ${profile.years_of_experience} yrs` : ""}</strong>
+              </div>
+              <div>
+                <small>Location</small>
+                <strong>{profile?.location || "Not set"}</strong>
+              </div>
+            </div>
+            <div className="dashboard-profile-skills">
+              <small>Current skills</small>
+              <div>
+                {(profile?.skills || []).length ? profile.skills.slice(0, 12).map((skill) => (
+                  <span key={skill} className="dashboard-chip dashboard-gene-matched">{skill}</span>
+                )) : <span className="dashboard-muted">Add skills or upload a resume to improve this analysis.</span>}
+              </div>
+            </div>
+          </section>
+          <p className="dashboard-card mb-4 text-sm leading-6 text-slate-600">
+            This analysis uses your profile and {dashboard.analyzed_listing_count || 0} top matching job listings
+            {profile?.desired_role ? ` for ${profile.desired_role}` : ""}
+            {profile?.location ? ` in ${profile.location}` : ""}. Skill signal counts reflect this result set, not the whole job market.
+          </p>
           <div className="dashboard-main-grid">
             <div className="dashboard-main-column">
               <SkillFamilies families={model.familyGaps} expandedFamilies={expandedFamilies} onToggleFamily={toggleFamily} onOpenSkill={setSkillDetail} />
@@ -125,6 +164,7 @@ export default function DashboardPage({ view = "dashboard" }) {
               <LearningRecommendations model={model} />
             </aside>
           </div>
+          </>
         ) : (
           <EmptyState title="Skill gap data unavailable" message="The dashboard could not load the current skill analysis. Try refreshing after the backend is running." />
         )}

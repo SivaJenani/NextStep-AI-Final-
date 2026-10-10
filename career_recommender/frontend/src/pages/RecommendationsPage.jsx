@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import client, { getApiErrorMessage, getRecommendations } from "../api/client";
+import client, { getApiErrorMessage, getRecommendations, postFeedback } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 import { getCourseForSkill } from "../utils/courseLinks";
 import { correctRoleSpelling } from "../utils/opportunityMode";
@@ -160,7 +161,7 @@ function MissingSkillBadge({ skill }) {
   );
 }
 
-function JobCard({ job, onSave, savingId, onTailor }) {
+function JobCard({ job, onSave, savingId, onTailor, onFeedback, onDismiss }) {
   const missing = job.missing_skills || [];
   const matched = job.matched_skills || [];
   const jobId = job.external_job_id || job.job_id || `${job.company_name}-${job.job_title}`;
@@ -247,7 +248,7 @@ function JobCard({ job, onSave, savingId, onTailor }) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         {job.apply_link ? (
-          <a href={job.apply_link} target="_blank" rel="noreferrer" className="primary-button rounded-xl px-4 py-2">
+          <a href={job.apply_link} target="_blank" rel="noreferrer" onClick={() => onFeedback(job, "apply")} className="primary-button rounded-xl px-4 py-2">
             Apply now
           </a>
         ) : (
@@ -257,7 +258,7 @@ function JobCard({ job, onSave, savingId, onTailor }) {
         )}
         <button
           type="button"
-          onClick={() => onSave(job)}
+          onClick={() => { onFeedback(job, "click"); onSave(job); }}
           disabled={savingId === jobId}
           className="secondary-button rounded-xl px-4 py-2"
         >
@@ -269,6 +270,9 @@ function JobCard({ job, onSave, savingId, onTailor }) {
           className="secondary-button border-blue-200 hover:border-blue-300 text-blue-700 bg-blue-50/50 hover:bg-blue-50 rounded-xl px-4 py-2 flex items-center gap-1.5 font-bold"
         >
           Tailor Resume
+        </button>
+        <button type="button" onClick={() => onDismiss(job)} className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800">
+          Not for me
         </button>
       </div>
     </article>
@@ -318,6 +322,7 @@ function CompanyCard({ company }) {
 }
 
 export default function RecommendationsPage() {
+  const { user } = useAuth();
   const [desiredRole, setDesiredRole] = useState("Backend Developer Intern");
   const [location, setLocation] = useState("India");
   const [mode, setMode] = useState("internship");
@@ -327,6 +332,8 @@ export default function RecommendationsPage() {
   const [savingId, setSavingId] = useState("");
   const [activeTab, setActiveTab] = useState("desired");
   const [tailoringJob, setTailoringJob] = useState(null);
+  const [dismissedJobIds, setDismissedJobIds] = useState(() => new Set());
+  const loggedViewBundle = useRef(null);
 
   const jobs = bundle?.jobs || [];
   const missingSkills = bundle?.missing_skills || [];
@@ -334,6 +341,27 @@ export default function RecommendationsPage() {
   const trendingSkills = bundle?.trending_skills || [];
   const topCompanies = bundle?.top_companies || [];
   const skillBasedRecommendations = bundle?.skill_based_recommendations || [];
+
+  const jobKey = (job) => String(job.external_job_id || job.job_id || `${job.company_name}-${job.job_title}`);
+  const logFeedback = (job, action) => {
+    if (!user?.id) return;
+    postFeedback({ job_id: jobKey(job), action }).catch(() => {});
+  };
+  const dismissJob = (job) => {
+    const id = jobKey(job);
+    setDismissedJobIds((current) => new Set([...current, id]));
+    logFeedback(job, "dismiss");
+  };
+
+  useEffect(() => {
+    if (!user?.id || !bundle) return;
+    if (loggedViewBundle.current === bundle) return;
+    loggedViewBundle.current = bundle;
+    const seen = new Map();
+    [...jobs, ...skillBasedRecommendations.flatMap((item) => item.opportunities || [])]
+      .forEach((job) => seen.set(jobKey(job), job));
+    seen.forEach((job) => logFeedback(job, "view"));
+  }, [bundle, user?.id]);
 
 
   const stats = useMemo(() => {
@@ -631,15 +659,17 @@ export default function RecommendationsPage() {
                       <h4 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-slate-550 border-b border-slate-100 pb-2">
                         Top Opportunities for {rec.role}
                       </h4>
-                      {rec.opportunities && rec.opportunities.length ? (
+                      {rec.opportunities && rec.opportunities.filter((job) => !dismissedJobIds.has(jobKey(job))).length ? (
                         <div className="grid gap-4">
-                          {rec.opportunities.map((opp) => (
+                          {rec.opportunities.filter((job) => !dismissedJobIds.has(jobKey(job))).map((opp) => (
                             <JobCard
                               key={opp.external_job_id || `${opp.company_name}-${opp.job_title}`}
                               job={opp}
                               onSave={saveJob}
                               savingId={savingId}
                               onTailor={setTailoringJob}
+                              onFeedback={logFeedback}
+                              onDismiss={dismissJob}
                             />
                           ))}
                         </div>
@@ -660,14 +690,16 @@ export default function RecommendationsPage() {
                 </div>
               )}
             </div>
-          ) : jobs.length ? (
-            jobs.map((job) => (
+          ) : jobs.filter((job) => !dismissedJobIds.has(jobKey(job))).length ? (
+            jobs.filter((job) => !dismissedJobIds.has(jobKey(job))).map((job) => (
               <JobCard
                 key={job.external_job_id || `${job.company_name}-${job.job_title}`}
                 job={job}
                 onSave={saveJob}
                 savingId={savingId}
                 onTailor={setTailoringJob}
+                onFeedback={logFeedback}
+                onDismiss={dismissJob}
               />
             ))
           ) : (

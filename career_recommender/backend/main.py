@@ -4,6 +4,8 @@ import logging
 import os
 import re
 import time
+import httpx
+from urllib.parse import urlparse
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
@@ -1419,19 +1421,14 @@ async def recommend_semantic_jobs(
 async def record_feedback(
     event: schemas.FeedbackEvent,
     current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    if str(current_user.id) != event.user_id:
-        raise HTTPException(status_code=403, detail="User ID mismatch.")
-
-    payload = json.dumps({"action": event.action, "ts": time.time()})
-
-    if redis_client:
-        key = f"feedback:{event.user_id}:{event.job_id}"
-        redis_client.lpush(key, payload)
-    else:
-        _feedback_store = getattr(record_feedback, "_store", [])
-        _feedback_store.append({"user_id": event.user_id, "job_id": event.job_id, "data": payload})
-        record_feedback._store = _feedback_store
+    db.add(models.RecommendationInteraction(
+        user_id=current_user.id,
+        job_id=event.job_id,
+        action=event.action,
+    ))
+    db.commit()
 
     return {"status": "ok"}
 
@@ -1455,6 +1452,7 @@ async def skill_dashboard(
         "quick_win_skills": bundle.get("quick_win_skills", []),
         "micro_gap_summary": bundle.get("micro_gap_summary", {}),
         "skill_dna_profiles": bundle.get("skill_dna_profiles", []),
+        "analyzed_listing_count": len(bundle.get("jobs", [])),
     }
 
 
@@ -1762,28 +1760,139 @@ def export_roadmap(
         
     return schemas.RoadmapExportResponse(format=fmt, content=content)
 
+async def _fetch_github_project_context(repository_url: str) -> dict:
+    parsed = urlparse(repository_url)
+    parts = [part for part in parsed.path.strip("/").split("/") if part]
+    if len(parts) < 2 or parsed.netloc.lower().replace("www.", "") != "github.com":
+        raise HTTPException(status_code=400, detail="Enter a valid GitHub repository URL.")
+
+    owner, repo = parts[0], parts[1].removesuffix(".git")
+    api_url = f"https://api.github.com/repos/{owner}/{repo}"
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "NextStep-AI"}
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0, headers=headers, follow_redirects=True) as http:
+            response = await http.get(api_url)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="GitHub repository was not found or is private.")
+            response.raise_for_status()
+            repository = response.json()
+
+            readme_text = ""
+            readme_response = await http.get(f"{api_url}/readme", headers={**headers, "Accept": "application/vnd.github.raw+json"})
+            if readme_response.is_success:
+                readme_text = readme_response.text[:12000]
+
+            languages_response = await http.get(f"{api_url}/languages")
+            languages = list((languages_response.json() if languages_response.is_success else {}).keys())
+
+            tree_response = await http.get(
+                f"{api_url}/git/trees/{repository.get('default_branch', 'main')}?recursive=1"
+            )
+            paths = []
+            if tree_response.is_success:
+                paths = [item.get("path", "") for item in tree_response.json().get("tree", []) if item.get("type") == "blob"][:180]
+
+            preferred_names = {"package.json", "requirements.txt", "pyproject.toml", "dockerfile", "main.py", "app.py", "readme.md"}
+            key_paths = [path for path in paths if path.lower().split("/")[-1] in preferred_names][:6]
+            key_files = {}
+            for path in key_paths:
+                raw_response = await http.get(
+                    f"https://raw.githubusercontent.com/{owner}/{repo}/{repository.get('default_branch', 'main')}/{path}"
+                )
+                if raw_response.is_success:
+                    key_files[path] = raw_response.text[:8000]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("GitHub repository fetch failed: %s", exc)
+        raise HTTPException(status_code=502, detail="GitHub could not be reached right now.") from exc
+
+    return {
+        "name": repository.get("full_name"),
+        "description": repository.get("description") or "",
+        "default_branch": repository.get("default_branch"),
+        "stars": repository.get("stargazers_count", 0),
+        "forks": repository.get("forks_count", 0),
+        "open_issues": repository.get("open_issues_count", 0),
+        "updated_at": repository.get("updated_at"),
+        "languages": languages,
+        "files": paths,
+        "readme": readme_text,
+        "key_files": key_files,
+    }
+
+
+def _fallback_project_analysis(context: dict) -> schemas.ProjectAnalysisResponse:
+    files = {str(path).lower() for path in context.get("files", [])}
+    readme = context.get("readme", "").strip()
+    has_tests = any("test" in path or "spec" in path for path in files)
+    has_docs = bool(readme)
+    has_deployment = any(name in files for name in {"dockerfile", "docker-compose.yml", "vercel.json", "render.yaml"})
+    return schemas.ProjectAnalysisResponse(
+        architecture="Good" if len(files) >= 8 else "Needs Improvement",
+        code_quality="Good" if has_tests else "Needs Improvement",
+        documentation="Good" if has_docs else "Needs Improvement",
+        portfolio_value="Strong" if context.get("description") and len(files) >= 8 else "Developing",
+        resume_impact="Good" if context.get("languages") else "Needs Improvement",
+        deployment="Good" if has_deployment else "Needs Improvement",
+        suggestions=[
+            "Add a clear README.md with setup steps, architecture, and a short demo explanation." if not has_docs else "Keep the README focused on outcomes, architecture decisions, and screenshots.",
+            "Add automated tests so the repository demonstrates code quality." if not has_tests else "Document how to run the existing tests and include coverage for the core workflow.",
+            "Add a deployment configuration or live demo link." if not has_deployment else "Document the deployment process and required environment variables.",
+        ],
+    )
+
+
 @app.post("/roadmap/analyze-project", response_model=schemas.ProjectAnalysisResponse)
 async def analyze_project(
     payload: schemas.ProjectUpdatePayload,
     current_user: models.User = Depends(get_current_user)
 ):
-    import random
-    score_labels = ["Strong", "Good", "Needs Improvement", "Outstanding"]
-    suggestions = [
-        "Add a clear README.md outlining setup instructions and architectural diagrams.",
-        "Implement basic unit tests using pytest or jest to demonstrate code quality standards.",
-        "Refactor configuration parameters into environment variables (.env) to follow security best practices.",
-        "Deploy the project on Vercel or Render and add the live link to the repository description."
-    ]
-    return schemas.ProjectAnalysisResponse(
-        architecture=random.choice(score_labels),
-        code_quality=random.choice(score_labels),
-        documentation=random.choice(score_labels),
-        portfolio_value=random.choice(score_labels),
-        resume_impact=random.choice(score_labels),
-        deployment=random.choice(score_labels),
-        suggestions=suggestions
+    repository_url = (payload.repo or "").strip()
+    if not repository_url:
+        raise HTTPException(status_code=400, detail="Add a GitHub repository link before analyzing the project.")
+    context = await _fetch_github_project_context(repository_url)
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    if not api_key:
+        logger.warning("OPENAI_API_KEY is not configured; returning repository-grounded evaluation.")
+        return _fallback_project_analysis(context)
+
+    system_prompt = (
+        "You are a senior software engineer reviewing a real GitHub repository for a career portfolio. "
+        "Use only the supplied repository evidence. Return JSON only with exactly these keys: "
+        "architecture, code_quality, documentation, portfolio_value, resume_impact, deployment, suggestions. "
+        "Each rating must be one of: Outstanding, Strong, Good, Needs Improvement. "
+        "Suggestions must be an array of 3 to 5 concrete, evidence-based actions."
     )
+    user_prompt = json.dumps({
+        "repository": context,
+        "candidate_notes": payload.notes or "",
+        "live_demo": payload.demo or "",
+        "project_status": payload.status,
+    }, ensure_ascii=True)
+
+    try:
+        from openai import OpenAI
+        model = _get_openai_chat_model()
+
+        def _run_project_review() -> str:
+            client = OpenAI(api_key=api_key, timeout=45.0)
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.1,
+            )
+            return (response.choices[0].message.content or "").strip()
+
+        parsed = json.loads(clean_json_response(await asyncio.to_thread(_run_project_review)))
+        return schemas.ProjectAnalysisResponse.model_validate(parsed)
+    except Exception as exc:
+        logger.exception("AI project evaluation failed; using repository-grounded fallback: %s", exc)
+        return _fallback_project_analysis(context)
 
 
 

@@ -1,7 +1,7 @@
 import { Filter } from "lucide-react";
 import { DEFAULT_FILTERS, EXPERIENCE_LEVELS, INDUSTRIES, LOCATIONS } from "./model";
 
-export default function DashboardFilters({ filters, onChange, onReset, model }) {
+export default function DashboardFilters({ filters, onChange, onReset, model, skillGapOnly = false }) {
   const roles = ["All roles", ...Array.from(new Set(model.skillDnaProfiles.map((profile) => profile.role_title).filter(Boolean)))];
   if (filters.targetRole && !roles.includes(filters.targetRole)) {
     roles.push(filters.targetRole);
@@ -23,13 +23,15 @@ export default function DashboardFilters({ filters, onChange, onReset, model }) 
     loc.push(filters.location);
   }
 
-  const filterConfig = [
-    ["targetRole", "Target Role", roles],
-    ["experienceLevel", "Experience Level", exp],
-    ["industry", "Industry", ind],
-    ["skillCategory", "Skill Category", categories],
-    ["location", "Job Location", loc],
-  ];
+  const filterConfig = skillGapOnly
+    ? [["skillCategory", "Skill Family", categories]]
+    : [
+        ["targetRole", "Target Role", roles],
+        ["experienceLevel", "Experience Level", exp],
+        ["industry", "Industry", ind],
+        ["skillCategory", "Skill Category", categories],
+        ["location", "Job Location", loc],
+      ];
 
   return (
     <section className="dashboard-card dashboard-filter-card">
