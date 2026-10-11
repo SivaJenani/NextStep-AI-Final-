@@ -89,6 +89,20 @@ function ProfileMetric({ label, value, note, tone = "slate" }) {
   );
 }
 
+const completionRingOpacities = [0.95, 0.88, 0.78, 0.66, 0.55, 0.46, 0.42, 0.5, 0.62, 0.74, 0.86, 0.94];
+
+function completionRingSegment(index) {
+  const startAngle = (-90 + index * 30 + 1.5) * (Math.PI / 180);
+  const endAngle = (-90 + index * 30 + 28.5) * (Math.PI / 180);
+  const radius = 35;
+  const startX = 50 + radius * Math.cos(startAngle);
+  const startY = 50 + radius * Math.sin(startAngle);
+  const endX = 50 + radius * Math.cos(endAngle);
+  const endY = 50 + radius * Math.sin(endAngle);
+  return `M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`;
+}
+
+
 function QuickAction({ to, label, note }) {
   return (
     <NavLink
@@ -103,17 +117,13 @@ function QuickAction({ to, label, note }) {
 
 const ChevronDownIcon = () => (
   <svg
-    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+    className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 20 20"
-    fill="currentColor"
+    viewBox="0 0 12 12"
+    fill="none"
     aria-hidden="true"
   >
-    <path
-      fillRule="evenodd"
-      d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
-      clipRule="evenodd"
-    />
+    <path d="m2 4 4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -136,7 +146,7 @@ function CustomSelect({ value, onChange, options, placeholder, className = "" })
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <div
-        className="field-input flex cursor-pointer items-center justify-between"
+        className="field-input flex cursor-pointer items-center justify-between text-sm"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className={selectedOption ? "text-slate-900" : "text-slate-400"}>
@@ -169,7 +179,7 @@ function CustomSelect({ value, onChange, options, placeholder, className = "" })
   );
 }
 
-function ComboBox({ value, onChange, options, placeholder, className = "" }) {
+function ComboBox({ value, onChange, options, placeholder, className = "", inputClassName = "" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || "");
   const dropdownRef = useRef(null);
@@ -195,10 +205,11 @@ function ComboBox({ value, onChange, options, placeholder, className = "" }) {
     <div className={`relative ${className}`} ref={dropdownRef}>
       <div className="relative">
         <input
-          className="field-input pr-10"
+          className={`field-input pr-12 text-sm ${inputClassName}`}
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);
+            onChange(e.target.value);
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
@@ -251,7 +262,11 @@ export default function ProfilePage() {
   const [frequency, setFrequency] = useState("daily");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [matchPreview, setMatchPreview] = useState(null);
   const [profilePhoto, setProfilePhoto] = useState("");
+  const [showSavedNotice, setShowSavedNotice] = useState(false);
+  const savedNoticeTimer = useRef(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -281,6 +296,8 @@ export default function ProfilePage() {
   useEffect(() => {
     setProfilePhoto(localStorage.getItem(storageKey(user, "photo")) || "");
   }, [user]);
+
+  useEffect(() => () => window.clearTimeout(savedNoticeTimer.current), []);
 
   const skills = useMemo(() => splitSkills(form.skills), [form.skills]);
   const completion = useMemo(() => computeCompletion(form), [form]);
@@ -313,11 +330,58 @@ export default function ProfilePage() {
     setForm(updatedForm);
     try {
       await client.post("/profile/create", updatedForm);
-      toast.success("Profile saved successfully.");
+      toast.success("Profile saved successfully.", {
+        position: "top-center",
+        duration: 2500,
+        style: {
+          background: "rgba(15, 23, 42, 0.8)",
+          color: "#fff",
+        },
+      });
+      setShowSavedNotice(true);
+      window.clearTimeout(savedNoticeTimer.current);
+      savedNoticeTimer.current = window.setTimeout(() => setShowSavedNotice(false), 2500);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Unable to save profile.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleMatchPreview = async () => {
+    if (!form.mode) {
+      toast.error("Choose a work mode before previewing matches.");
+      return;
+    }
+    if (!form.experience_level) {
+      toast.error("Choose an experience level before previewing matches.");
+      return;
+    }
+    if (modeMismatchMessage) {
+      toast.error(modeMismatchMessage);
+      return;
+    }
+
+    setPreviewLoading(true);
+    try {
+      const updatedForm = {
+        ...form,
+        desired_role: correctRoleSpelling(form.desired_role),
+      };
+      await client.post("/profile/create", updatedForm);
+      setForm(updatedForm);
+      const endpoint = updatedForm.mode === "internship" ? "/recommend/internships" : "/recommend/jobs";
+      const { data } = await client.get(endpoint, {
+        params: {
+          query: updatedForm.desired_role || undefined,
+          location: updatedForm.location || undefined,
+        },
+      });
+      setMatchPreview(data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Unable to build a match preview.");
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -352,65 +416,83 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="profile-page space-y-6">
+      {showSavedNotice && <div className="pointer-events-none fixed inset-0 z-[9998] bg-black/50" aria-hidden="true" />}
       <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_45px_rgba(15,23,42,0.07)]">
-        <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="p-6 sm:p-8">
-            <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">My Profile</p>
-            <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
-              <label className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-3xl bg-slate-900 text-2xl font-bold text-white shadow-[0_18px_36px_rgba(15,23,42,0.18)]">
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
-                ) : (
-                  initialsFromName(user?.full_name)
-                )}
-                <span className="absolute inset-x-0 bottom-0 bg-slate-950/75 px-2 py-1 text-center text-[11px] font-semibold opacity-0 transition group-hover:opacity-100">
-                  Change
-                </span>
-                <input type="file" accept="image/*" onChange={handleProfilePhotoChange} className="sr-only" />
-              </label>
-              <div>
-                <h2 className="font-display text-4xl font-bold tracking-[-0.04em] text-slate-950">
-                  {user?.full_name || "Career profile"}
-                </h2>
-                <p className="mt-2 text-base leading-7 text-slate-600">
-                  Targeting <span className="font-semibold text-slate-950">{targetLabel}</span> in{" "}
-                  <span className="font-semibold text-slate-950">{form.location || "your preferred location"}</span>.
-                </p>
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">My Profile</p>
+              <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+                <label className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-3xl bg-slate-900 text-2xl font-bold text-white shadow-[0_18px_36px_rgba(15,23,42,0.18)]">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                  ) : (
+                    initialsFromName(user?.full_name)
+                  )}
+                  <span className="absolute inset-x-0 bottom-0 bg-slate-950/75 px-2 py-1 text-center text-[11px] font-semibold opacity-0 transition group-hover:opacity-100">
+                    Change
+                  </span>
+                  <input type="file" accept="image/*" onChange={handleProfilePhotoChange} className="sr-only" />
+                </label>
+                <div>
+                  <h2 className="font-display text-4xl font-bold tracking-[-0.04em] text-slate-950">
+                    {user?.full_name || "Career profile"}
+                  </h2>
+                  <p className="mt-2 text-base leading-7 text-slate-600">
+                    Targeting <span className="font-semibold text-slate-950">{targetLabel}</span> in{" "}
+                    <span className="font-semibold text-slate-950">{form.location || "your preferred location"}</span>.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span className="muted-chip bg-blue-100 text-blue-900">{titleCase(form.mode)} focus</span>
-              <span className="muted-chip bg-emerald-100 text-emerald-900">{titleCase(form.experience_level)}</span>
-              <span className="muted-chip bg-slate-100 text-slate-700">{form.domain || "Domain not set"}</span>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="muted-chip bg-blue-100 text-blue-900">{form.mode ? `${titleCase(form.mode)} focus` : "Mode not set"}</span>
+                <span className="muted-chip bg-emerald-100 text-emerald-900">{titleCase(form.experience_level || "Experience not set")}</span>
+                <span className="muted-chip bg-slate-100 text-slate-700">{form.domain || "Domain not set"}</span>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#ffffff)] p-6 sm:p-8 lg:border-l lg:border-t-0">
-            <div className="flex items-center justify-between gap-4">
+          <div className="border-t border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#ffffff)] p-6 sm:p-8 xl:border-l xl:border-t-0">
+            <div className="flex items-center gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Profile Completion</p>
-                <p className="mt-2 text-4xl font-bold tracking-[-0.05em] text-slate-950">{completion.score}%</p>
+                <div className="mt-2 flex items-center gap-8">
+                  <p className="text-4xl font-bold tracking-[-0.05em] text-slate-950">{completion.score}%</p>
+                  {completion.score === 100 ? (
+                    <svg className="ml-[200px] h-20 w-20" viewBox="0 0 100 100" role="img" aria-label="Profile complete">
+                      {completionRingOpacities.map((opacity, index) => (
+                        <path
+                          key={index}
+                          d={completionRingSegment(index)}
+                          fill="none"
+                          stroke="#22c55e"
+                          strokeOpacity={opacity}
+                          strokeWidth="13"
+                        />
+                      ))}
+                      <path d="M21 46 31 34 49 52 77 3 90 10 59 78Z" fill="#2fb34a" />
+                    </svg>
+                  ) : (
+                    <svg className="h-20 w-20 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e2e8f0" strokeWidth="12" />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="transparent"
+                        stroke="#3b82f6"
+                        strokeWidth="12"
+                        strokeDasharray="251.2"
+                        strokeDashoffset={251.2 - (251.2 * completion.score) / 100}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                      />
+                    </svg>
+                  )}
+                </div>
               </div>
-              <svg className="h-20 w-20 -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e2e8f0" strokeWidth="12" />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                  stroke="#3b82f6"
-                  strokeWidth="12"
-                  strokeDasharray="251.2"
-                  strokeDashoffset={251.2 - (251.2 * completion.score) / 100}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-            </div>
-            <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-200">
-              <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500" style={{ width: `${completion.score}%` }} />
             </div>
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {completion.checks.map((check) => (
@@ -434,7 +516,7 @@ export default function ProfilePage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <form onSubmit={handleSubmit} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+        <form onSubmit={handleSubmit} className="rounded-[30px] border border-t-0 border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">Profile Details</p>
@@ -447,12 +529,24 @@ export default function ProfilePage() {
 
           <div className="mt-7 grid gap-5 lg:grid-cols-2">
             <Field label="Desired role" className="lg:col-span-2">
-              <input
-                className="field-input capitalize"
+              <ComboBox
+                inputClassName="capitalize"
                 value={form.desired_role}
-                onChange={(e) => setForm({ ...form, desired_role: e.target.value })}
-                onBlur={(e) => setForm({ ...form, desired_role: correctRoleSpelling(e.target.value) })}
-                placeholder="Backend Developer, Data Analyst, Marketing Associate"
+                onChange={(value) => setForm({ ...form, desired_role: correctRoleSpelling(value) })}
+                options={[
+                  { value: "Backend Developer", label: "Backend Developer" },
+                  { value: "Frontend Developer", label: "Frontend Developer" },
+                  { value: "Full Stack Developer", label: "Full Stack Developer" },
+                  { value: "Data Analyst", label: "Data Analyst" },
+                  { value: "Machine Learning Engineer", label: "Machine Learning Engineer" },
+                  { value: "DevOps Engineer", label: "DevOps Engineer" },
+                  { value: "Cybersecurity Analyst", label: "Cybersecurity Analyst" },
+                  { value: "Product Manager", label: "Product Manager" },
+                  { value: "UX Designer", label: "UX Designer" },
+                  { value: "Marketing Associate", label: "Marketing Associate" },
+                  { value: "Business Analyst", label: "Business Analyst" },
+                ]}
+                placeholder="Choose a suggested role or type your own"
               />
             </Field>
 
@@ -481,10 +575,19 @@ export default function ProfilePage() {
             </Field>
 
             <Field label="Location">
-              <input
-                className="field-input"
+              <ComboBox
                 value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                onChange={(value) => setForm((current) => ({ ...current, location: value }))}
+                options={[
+                  { value: "Chennai", label: "Chennai" },
+                  { value: "Bengaluru", label: "Bengaluru (Bangalore)" },
+                  { value: "Hyderabad", label: "Hyderabad" },
+                  { value: "Mumbai", label: "Mumbai" },
+                  { value: "Delhi", label: "Delhi" },
+                  { value: "Pune", label: "Pune" },
+                  { value: "Kolkata", label: "Kolkata" },
+                  { value: "Remote", label: "Remote" },
+                ]}
                 placeholder="e.g. Chennai, Bangalore, Remote"
               />
             </Field>
@@ -531,14 +634,11 @@ export default function ProfilePage() {
 
             <Field label="Skills" className="lg:col-span-2">
               <textarea
-                className="field-input min-h-32"
+                className="field-input min-h-32 text-sm placeholder:text-sm"
                 placeholder="Type a skill and press Enter, or separate skills with commas"
                 value={form.skills}
                 onChange={(e) => setForm({ ...form, skills: e.target.value })}
               />
-              <p className="mt-2 text-xs font-semibold text-slate-500">
-                Press Enter after each new skill to add it to your current stack.
-              </p>
               {availableSkillSuggestions.length ? (
                 <div className="mt-3">
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Suggested skills</p>
@@ -547,7 +647,7 @@ export default function ProfilePage() {
                       <button
                         key={skill}
                         type="button"
-                        className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-100"
+                        className="profile-skill-suggestion rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700 transition hover:border-teal-400 hover:bg-teal-100"
                         onClick={() => addSuggestedSkill(skill)}
                       >
                         + {skill}
@@ -590,6 +690,38 @@ export default function ProfilePage() {
               <QuickAction to="/dashboard" label="View matches" note="Review current skill gaps and role signals for this profile." />
               <QuickAction to="/dashboard" label="View skill gaps" note="Check the exact skills holding your score back." />
             </div>
+          </section>
+
+          <section className="profile-match-preview rounded-[30px] border border-teal-200 bg-teal-50/60 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.04)]">
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-teal-700">Profile Match Preview</p>
+            <h3 className="mt-3 text-xl font-bold text-slate-900">See what your profile matches today</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Uses your saved target role, skills, experience, location, and work mode to show live matches and skill gaps.
+            </p>
+            <button type="button" className="secondary-button mt-4" onClick={handleMatchPreview} disabled={previewLoading}>
+              {previewLoading ? "Finding matches..." : "Save & preview matches"}
+            </button>
+            {matchPreview && (
+              <div className="mt-5 rounded-2xl border border-white bg-white p-4">
+                {matchPreview.jobs?.[0] ? (
+                  <>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Top live match</p>
+                    <p className="mt-1 font-bold text-slate-900">{matchPreview.jobs[0].job_title}</p>
+                    <p className="text-sm text-slate-600">{matchPreview.jobs[0].company_name || "Company not listed"} | {Math.round(matchPreview.jobs[0].skill_match_percentage || 0)}% skill match</p>
+                    {matchPreview.missing_skills?.length > 0 && (
+                      <p className="mt-3 text-sm leading-6 text-slate-700">
+                        Useful next skills: <span className="font-semibold">{matchPreview.missing_skills.slice(0, 4).join(", ")}</span>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm leading-6 text-slate-700">{matchPreview.job_feed_message || "No live matches are available right now. Try again after updating your skills or location."}</p>
+                )}
+                <NavLink to="/dashboard" className="mt-3 inline-flex text-sm font-semibold text-teal-800 hover:text-teal-950">
+                  Open full skill gap dashboard
+                </NavLink>
+              </div>
+            )}
           </section>
         </div>
       </section>

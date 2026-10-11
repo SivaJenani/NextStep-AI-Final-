@@ -544,46 +544,47 @@ def _infer_role(text: str) -> str:
 
 def _is_likely_resume(text: str) -> bool:
     lowered = (text or "").lower()
-    if not lowered.strip():
+    word_count = len(lowered.split())
+    if word_count < 25 or word_count > 3000:
         return False
 
-    # Standard section titles or indicators in resumes
-    resume_keywords = [
-        "experience", "work history", "employment", "internship", "professional history",
-        "education", "academic", "university", "college", "school", "qualification",
-        "skills", "technical skills", "technologies", "tech stack", "tools", "competencies",
-        "projects", "personal projects", "academic projects",
-        "certifications", "certificates", "publications", "achievements"
-    ]
+    section_patterns = {
+        "experience": r"\b(?:work\s+|professional\s+)?experience\b|\bemployment(?:\s+history)?\b|\binternships?\b",
+        "education": r"\beducation\b|\bacademic\s+background\b|\bqualifications?\b",
+        "skills": r"\b(?:technical\s+)?skills\b|\bcore\s+competencies\b|\btechnologies\b|\btech\s+stack\b",
+        "projects": r"\b(?:(?:academic|personal|key)\s+)?projects\b",
+        "certifications": r"\bcertifications?\b|\blicenses?\b",
+    }
+    detected_sections = {
+        section for section, pattern in section_patterns.items()
+        if re.search(pattern, lowered)
+    }
 
-    # Count matching unique resume keywords
-    match_count = sum(1 for kw in resume_keywords if kw in lowered)
+    has_email = re.search(r"\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b", lowered) is not None
+    has_phone = re.search(r"(?:\+?\d[\d ().-]{7,}\d)", lowered) is not None
+    has_profile = any(value in lowered for value in ("linkedin.com", "github.com", "portfolio"))
+    has_contact = has_email or has_phone or has_profile
+    has_professional_content = bool(_infer_role(text)) or len(extract_skills_from_text(text)) >= 2
 
-    # Look for contact details (email, phone numbers, social/dev links)
-    has_email = "@" in lowered
-    
-    import re
-    has_phone = any(p in lowered for p in ["phone", "mobile", "contact", "tel:"]) or re.search(r"\b\d{10}\b", lowered) is not None
-    has_profile = any(p in lowered for p in ["linkedin.com", "github.com", "portfolio"])
-
-    # If the document is extremely long (like a textbook, monthly current affairs digest, or article), it's not a resume.
-    # A single page or two page resume is typically under 1200 words. Let's set a safe limit of 2500 words.
-    word_count = len(lowered.split())
-    # If the document has more than 20 words and less than 3000 words, we assume it's a valid document
-    # and let the AI try its best. This prevents blocking valid resumes that don't match our strict keywords.
-    if 20 <= word_count <= 3000:
-        return True
-
-    return False
+    has_resume_structure = (
+        (has_contact and len(detected_sections) >= 2)
+        or (len(detected_sections) >= 3 and bool(detected_sections & {"experience", "projects"}))
+    )
+    return has_resume_structure and has_professional_content
 
 
 def analyze_document(file_bytes: bytes, filename: str, document_type: str) -> dict:
     text = extract_text_from_pdf(file_bytes)
     if document_type == "resume" and not _is_likely_resume(text):
         from fastapi import HTTPException
+        detail = (
+            "This PDF doesn't appear to be a valid resume. Upload a resume with contact details and sections such as Education, Experience, Skills, or Projects."
+            if len((text or "").split()) >= 25
+            else "Could not extract enough text from this PDF. Upload a readable resume PDF with selectable text, or a clear scan, and sections such as Education, Experience, and Skills."
+        )
         raise HTTPException(
             status_code=400, 
-            detail="Could not extract enough text from the PDF. Ensure it is a text-based resume (not a scanned image) and contains standard sections like Experience and Skills."
+            detail=detail,
         )
     sections = _sectionize_text(text)
     skills = extract_skills_from_text(text)

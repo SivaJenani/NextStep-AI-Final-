@@ -182,6 +182,44 @@ function KPIScoreCard({ title, score, suffix = "", status, description, color = 
   );
 }
 
+function AtsScoreCelebration({ score, onDismiss }) {
+  const colors = ["#60a5fa", "#f472b6", "#facc15", "#34d399", "#a78bfa", "#fb923c"];
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden print:hidden" aria-hidden="false">
+      {Array.from({ length: 52 }, (_, index) => (
+        <motion.span
+          key={index}
+          aria-hidden="true"
+          className="absolute top-[-16px] rounded-sm"
+          style={{
+            left: `${(index * 47 + 11) % 100}%`,
+            width: index % 4 === 0 ? 9 : 6,
+            height: index % 3 === 0 ? 12 : 8,
+            backgroundColor: colors[index % colors.length],
+          }}
+          initial={{ y: -20, rotate: 0, opacity: 0.95 }}
+          animate={{ y: window.innerHeight + 40, rotate: 540 + (index % 5) * 120, opacity: 0 }}
+          transition={{ duration: 2.7 + (index % 5) * 0.22, delay: (index % 13) * 0.055, ease: "linear" }}
+        />
+      ))}
+      <motion.div
+        role="status"
+        aria-live="polite"
+        initial={{ opacity: 0, y: -18, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="pointer-events-auto absolute left-1/2 top-5 flex w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 items-start gap-3 rounded-2xl border border-emerald-200 bg-white/95 p-4 shadow-2xl backdrop-blur"
+      >
+        <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-emerald-900">Strong ATS compatibility estimate: {score}%</p>
+          <p className="mt-1 text-sm leading-5 text-slate-600">Your resume has solid role keyword and section coverage. This is an app estimate, not a guaranteed ATS pass.</p>
+        </div>
+        <button type="button" onClick={onDismiss} className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-slate-100" aria-label="Dismiss score celebration">Dismiss</button>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function ResumeUploadPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -191,6 +229,9 @@ export default function ResumeUploadPage() {
   const [audit, setAudit] = useState(null);
   const [targetRole, setTargetRole] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("info");
+  const [atsCelebrationScore, setAtsCelebrationScore] = useState(null);
+  const atsCelebrationTimeoutRef = useRef(null);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tailoringJob, setTailoringJob] = useState(null);
@@ -222,6 +263,16 @@ export default function ResumeUploadPage() {
   const [customSkills, setCustomSkills] = useState([]);
   const [customTools, setCustomTools] = useState([]);
   const [customCertifications, setCustomCertifications] = useState([]);
+
+  const celebrateAtsScore = (nextAudit) => {
+    const score = Number(nextAudit?.ats_compatibility_score);
+    if (!Number.isFinite(score) || score < 80) return;
+    window.clearTimeout(atsCelebrationTimeoutRef.current);
+    setAtsCelebrationScore(Math.round(score));
+    atsCelebrationTimeoutRef.current = window.setTimeout(() => setAtsCelebrationScore(null), 5000);
+  };
+
+  useEffect(() => () => window.clearTimeout(atsCelebrationTimeoutRef.current), []);
 
   // Premium Dashboard States
   const [recruiterMode, setRecruiterMode] = useState(false);
@@ -527,8 +578,10 @@ export default function ResumeUploadPage() {
   const handleUpload = async (event) => {
     if (event) event.preventDefault();
     if (!resumeFile) {
-      toast.error("Please select a resume PDF file first.");
+      const prompt = "Please upload a valid, text-based resume PDF to continue.";
+      toast.error(prompt);
       setMessage("Upload a resume PDF.");
+      setMessageType("error");
       return;
     }
 
@@ -536,6 +589,7 @@ export default function ResumeUploadPage() {
     setResult(null);
     setAudit(null);
     setMessage("");
+    setMessageType("info");
     try {
       localStorage.removeItem(CACHE_KEY);
     } catch {
@@ -552,6 +606,7 @@ export default function ResumeUploadPage() {
       });
       setResult(data);
       setAudit(data.resume_audit || null);
+      celebrateAtsScore(data.resume_audit);
       setIgnoreMismatches(false);
       
       let nextRole = targetRole;
@@ -570,11 +625,17 @@ export default function ResumeUploadPage() {
       
       toast.success("Resume parsed and ATS audit generated!");
       setMessage("Documents analyzed, structured profile draft created, skills updated, and ATS audit generated.");
+      setMessageType("success");
     } catch (error) {
       console.error("Upload error:", error);
-      const errMsg = error.response?.data?.detail || error.message || "Document analysis failed.";
+      const backendDetail = String(error.response?.data?.detail || "");
+      const invalidResume = /could not extract enough text|doesn't appear to be a valid resume|upload a valid resume pdf/i.test(backendDetail);
+      const errMsg = invalidResume
+        ? "This file doesn't look like a valid resume. Please upload your resume as a readable PDF with sections such as Education, Experience, Skills, or Projects."
+        : backendDetail || "Resume analysis failed. Please check the file and try again.";
       toast.error(errMsg);
-      setMessage(`Error: ${errMsg} | ${error.stack?.substring(0, 50)}`);
+      setMessage(errMsg);
+      setMessageType("error");
     } finally {
       setLoadingAudit(false);
     }
@@ -591,6 +652,7 @@ export default function ResumeUploadPage() {
       }
       const { data } = await client.get("/resume/audit", { params });
       setAudit(data);
+      celebrateAtsScore(data);
       saveCache({
         result,
         audit: data,
@@ -599,9 +661,12 @@ export default function ResumeUploadPage() {
       fetchPreviewJobs(corrected);
       toast.success("ATS audit refreshed successfully.");
       setMessage("ATS audit refreshed for the selected target role.");
+      setMessageType("success");
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Unable to refresh ATS audit.");
-      setMessage(error.response?.data?.detail || "Unable to refresh ATS audit.");
+      const errMsg = error.response?.data?.detail || "Unable to refresh ATS audit.";
+      toast.error(errMsg);
+      setMessage(errMsg);
+      setMessageType("error");
     } finally {
       setLoadingAudit(false);
     }
@@ -1406,7 +1471,38 @@ export default function ResumeUploadPage() {
   const structured = result?.structured_profile;
 
   // Premium Simulated metrics
-  const scoreRaw = audit?.overall_score || 0;
+  const checkedSections = audit?.section_checks || [];
+  const sectionWeight = {
+    "Full Name": 3, "Email Address": 3, "Phone Number": 1, "LinkedIn Profile": 1,
+    "GitHub/Portfolio": 2, "Professional Summary": 12, "Technical Skills": 15,
+    "Soft Skills": 10, "Work Experience": 15, Projects: 22, Education: 10,
+    Certifications: 3, Achievements: 2, Languages: 1,
+  };
+  const weightedSectionScore = checkedSections.length
+    ? checkedSections.reduce((total, section) => total + (section.present ? sectionWeight[section.title] || 0 : 0), 0)
+    : null;
+  const sectionCompleteness = audit?.scoring_version >= 6 && Number.isFinite(Number(audit?.section_completeness_score))
+    ? Number(audit.section_completeness_score)
+    : weightedSectionScore;
+  const keywordMatchScore = Number(audit?.keyword_match_score || 0);
+  const roleAlignmentScore = Number(audit?.role_alignment_score || 0);
+  const impactScore = Number.isFinite(Number(audit?.impact_score))
+    ? Number(audit.impact_score)
+    : sectionCompleteness !== null && audit?.resume_strength_score !== undefined
+      ? Math.max(0, Math.min(100, (Number(audit.resume_strength_score) - sectionCompleteness * 0.6) / 0.4))
+      : null;
+  const marketReadinessScore = Number(audit?.market_readiness_score || 0);
+  const scoreRaw = sectionCompleteness !== null && impactScore !== null
+    ? Math.round((keywordMatchScore * 0.2 + roleAlignmentScore * 0.15 + sectionCompleteness * 0.45 + impactScore * 0.1 + marketReadinessScore * 0.1) * 100) / 100
+    : Number(audit?.overall_score || 0);
+  const atsCompatibilityScore = audit?.scoring_version >= 6 && Number.isFinite(Number(audit?.ats_compatibility_score))
+    ? Number(audit.ats_compatibility_score)
+    : sectionCompleteness !== null
+      ? (keywordMatchScore * sectionCompleteness) / 100
+      : keywordMatchScore;
+  const softSkillsMissing = audit?.section_checks?.some((section) => section.title === "Soft Skills" && !section.present) ?? false;
+  const displayedAtsCompatibilityScore = atsCompatibilityScore;
+  const getScoreBand = (score) => score >= 80 ? "Strong" : score >= 70 ? "Good" : score >= 60 ? "Partial" : "Needs work";
   const accuracyScore = scoreRaw ? 98.4 : 0;
   const confidenceScore = scoreRaw ? Math.round(90 + (scoreRaw % 10)) : 0;
   const readinessScore = scoreRaw ? Math.min(100, Math.round((audit?.market_readiness_score || 0) * 0.95 + 8)) : 0;
@@ -1431,6 +1527,20 @@ export default function ResumeUploadPage() {
   const candidateSummary = scoreRaw && structured
     ? `Qualified candidate with ${experienceYears} years of experience in the ${domainText} domain. Core strengths include ${structured.skills.slice(0, 5).join(", ")}. Demonstrates structured project capabilities with ${structured.projects.length} parsed project proof-points.`
     : null;
+
+  const handleGenerateAtsResume = () => {
+    if (!structured) {
+      toast.error("Upload and analyze a valid resume first.");
+      document.getElementById("resume-upload-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    setSelectedTemplate("minimalist");
+    toast.success("ATS-friendly layout selected. Review the preview, then click Export PDF.");
+    requestAnimationFrame(() => {
+      document.getElementById("pdf-sheet-viewer")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
 
 
   const exportResumeToPDF = async () => {
@@ -1519,6 +1629,12 @@ export default function ResumeUploadPage() {
 
   return (
     <div className="space-y-8 font-sans antialiased text-slate-900 pb-16 print:p-0 print:m-0 print:space-y-0 print:pb-0">
+      {atsCelebrationScore !== null && (
+        <AtsScoreCelebration score={atsCelebrationScore} onDismiss={() => {
+          window.clearTimeout(atsCelebrationTimeoutRef.current);
+          setAtsCelebrationScore(null);
+        }} />
+      )}
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-6 print:hidden">
         <div>
@@ -1558,7 +1674,7 @@ export default function ResumeUploadPage() {
       </div>
 
       {/* DRAG AND DROP ZONE */}
-      <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 transition-all hover:border-blue-400 print:hidden">
+      <section id="resume-upload-section" className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 transition-all hover:border-blue-400 print:hidden">
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
@@ -1574,6 +1690,7 @@ export default function ResumeUploadPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              aria-label="Choose a valid text-based resume PDF"
               className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
             >
               Choose PDF File
@@ -1595,6 +1712,8 @@ export default function ResumeUploadPage() {
               const file = e.target.files?.[0] || null;
               if (file) {
                 setResumeFile(file);
+                setMessage("");
+                setMessageType("info");
                 toast.success(`Selected file: ${file.name}`);
               }
             }}
@@ -1628,10 +1747,32 @@ export default function ResumeUploadPage() {
           </form>
 
           {message && (
-            <p className="mt-5 text-sm font-bold text-slate-600 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3">
-              <Activity className="h-4 w-4 text-blue-600" />
-              {message}
-            </p>
+            <div
+              role={messageType === "error" ? "alert" : "status"}
+              aria-live={messageType === "error" ? "assertive" : "polite"}
+              className={`mt-5 flex items-start gap-3 rounded-2xl border px-4 py-4 text-left ${
+                messageType === "error"
+                  ? "border-rose-200 bg-rose-50 text-rose-950"
+                  : messageType === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+                    : "border-slate-200 bg-slate-50 text-slate-700"
+              }`}
+            >
+              {messageType === "error" ? (
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+              ) : (
+                <Activity className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+              )}
+              <div className="min-w-0">
+                {messageType === "error" && <p className="font-bold">Resume upload needs attention</p>}
+                <p className="mt-1 text-sm leading-6">{message}</p>
+                {messageType === "error" && (
+                  <p className="mt-2 text-sm font-semibold text-rose-800">
+                    Next step: choose a text-based PDF resume under 5 MB, then select “Build profile &amp; Audit” again.
+                  </p>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </section>
@@ -1775,18 +1916,20 @@ export default function ResumeUploadPage() {
           title="Resume Score"
           score={scoreRaw > 0 ? scoreRaw : "—"}
           suffix="%"
-          status={scoreRaw >= 80 ? "Excellent" : scoreRaw >= 50 ? "Good" : scoreRaw > 0 ? "Needs Review" : "Pending"}
-          description="Based on ATS parsing checklist"
+          status={scoreRaw > 0 ? getScoreBand(scoreRaw) : "Pending"}
+          description="Resume completeness + impact"
           color={scoreRaw >= 80 ? "emerald" : scoreRaw >= 50 ? "blue" : scoreRaw > 0 ? "amber" : "slate"}
           icon={FileText}
         />
         <KPIScoreCard
           title="ATS Compatibility"
-          score={scoreRaw > 0 ? Math.round(audit?.keyword_match_score || 0) : "—"}
+          score={scoreRaw > 0 ? Math.round(displayedAtsCompatibilityScore) : "—"}
           suffix="%"
-          status={scoreRaw > 0 ? `${audit?.matched_keywords?.length || 0} matched` : "Pending"}
-          description="Keyword match density"
-          color={scoreRaw >= 80 ? "emerald" : scoreRaw >= 50 ? "blue" : scoreRaw > 0 ? "amber" : "slate"}
+          status={scoreRaw > 0 ? getScoreBand(displayedAtsCompatibilityScore) : "Pending"}
+          description={softSkillsMissing
+            ? "Soft Skills missing; section coverage is lower"
+            : "Keyword coverage × section completeness"}
+          color={displayedAtsCompatibilityScore >= 80 ? "emerald" : displayedAtsCompatibilityScore >= 50 ? "blue" : scoreRaw > 0 ? "amber" : "slate"}
           icon={Target}
         />
         <KPIScoreCard
@@ -1807,6 +1950,12 @@ export default function ResumeUploadPage() {
           icon={Award}
         />
       </section>
+
+      {scoreRaw > 0 && (
+        <p className="-mt-2 mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm leading-6 text-slate-700 print:hidden">
+          These are estimates from this app’s resume checklist and role keyword matching. ATS platforms use different processes, and there is no universal passing score. Review the matched keywords and missing sections below; recruiters make the final decision.
+        </p>
+      )}
 
       {/* TWO COLUMN INTERACTIVE WORKSPACE */}
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] print:hidden">
@@ -2900,17 +3049,14 @@ export default function ResumeUploadPage() {
         
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { title: "Generate ATS Resume", desc: "Build parsed layout for Greenhouse compliance", path: "/resume", icon: FileText },
             { 
               title: "Generate Cover Letter", 
               desc: "Tailor resume bullets & draft cover letters for matches", 
               onClick: () => setTailoringJob({ isGeneric: true, job_title: targetRole || "" }), 
               icon: FileCode 
             },
-            { title: "View Career Roadmap", desc: "Google maps for your target transition steps", path: "/roadmap", icon: Compass },
-            { title: "Find Matching Jobs", desc: "Search priority job feeds matching skills", path: "/recommendations", icon: Search },
             { title: "Ask AI Career Coach", desc: "Resolve recruitment questions & gaps", path: "/chatbot", icon: Users },
-            { title: "Generate Interview Qs", desc: "Rehearse mock questions & board", path: "/roadmap", icon: Target },
+            { title: "Generate Interview Qs", desc: "Practice role-specific questions in a mock interview", path: "/interview-prep", icon: Target },
           ].map((action) => {
             const isClickAction = typeof action.onClick === "function";
             const CardWrapper = isClickAction ? "button" : Link;

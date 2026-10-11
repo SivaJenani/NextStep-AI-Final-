@@ -60,7 +60,6 @@ export default function Footer() {
         {/* Brand column */}
         <div className="footer-brand-col">
           <Link to="/" className="footer-brand-link">
-            <img src="/images/next-step-ai-logo.png" alt="Next Step AI logo" className="footer-logo" />
             <span className="footer-brand-name">Next Step AI</span>
           </Link>
           <p className="footer-tagline">

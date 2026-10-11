@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import ThemePanel from "../components/ThemePanel";
 import Footer from "../components/Footer";
 
 
@@ -14,17 +13,26 @@ function profileStorageKey(user, key) {
 
 export default function HomePage() {
   const auth = useAuth() || {};
-  const { user, logout = () => {} } = auth;
+  const { user } = auth;
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState("");
   const vantaRef = useRef(null);
-  const navItems = [
+  const publicNavItems = [
     { label: "Dashboard", to: "/dashboard", match: "/dashboard" },
     { label: "Skill Gap", to: "/dashboard#skill-gap", match: "/dashboard#skill-gap" },
     { label: "Roadmap", to: "/roadmap", match: "/roadmap" },
     { label: "AI Mentor", to: "/chatbot", match: "/chatbot" },
   ];
+  const privateNavItems = [
+    { label: "Dashboard", to: "/dashboard", match: "/dashboard" },
+    { label: "Skill Gap", to: "/dashboard#skill-gap", match: "/dashboard#skill-gap" },
+    { label: "Roadmap", to: "/roadmap", match: "/roadmap" },
+    { label: "Resume", to: "/resume", match: "/resume" },
+    { label: "Bookmarks", to: "/bookmarks", match: "/bookmarks" },
+    { label: "AI Mentor", to: "/chatbot", match: "/chatbot" },
+  ];
+  const navItems = user ? privateNavItems : publicNavItems;
   const displayName = user?.full_name || user?.email?.split("@")[0] || "Guest";
   const initials = displayName
     .split(" ")
@@ -135,7 +143,6 @@ export default function HomePage() {
             </nav>
 
             <div className="home-header-actions">
-              <ThemePanel compact />
               {user ? (
                 <>
                   <div className="home-user-chip" aria-label={`Signed in as ${displayName}`}>
@@ -144,13 +151,6 @@ export default function HomePage() {
                     </span>
                     <span className="home-user-name">{displayName}</span>
                   </div>
-                  <button type="button" onClick={() => {
-                    if (window.confirm("Are you sure you want to log out?")) {
-                      logout();
-                    }
-                  }} className="home-logout-button">
-                    Logout
-                  </button>
                 </>
               ) : (
                 <>
@@ -218,7 +218,7 @@ export default function HomePage() {
               Discover real opportunities, understand exactly what skills are missing, and move from confusion to a focused action plan.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <Link to="/signup" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-500 hover:scale-[1.02]">
+              <Link to="/signup" className="inline-flex items-center justify-center rounded-full bg-[#00B4D8] px-8 py-3.5 text-base font-semibold text-[#03045E] shadow-lg shadow-cyan-500/30 transition-all hover:bg-[#90E0EF] hover:scale-[1.02]">
                 Launch your career workspace
               </Link>
               <Link to="/login" className="inline-flex items-center justify-center rounded-full border border-slate-600/60 bg-slate-800/40 backdrop-blur-md px-8 py-3.5 text-base font-semibold text-slate-200 transition-all hover:bg-slate-700/60 hover:border-slate-400 hover:text-white">

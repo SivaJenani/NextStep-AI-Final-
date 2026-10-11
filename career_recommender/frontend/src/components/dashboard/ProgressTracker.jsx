@@ -1,25 +1,45 @@
-import { Flame, Target, Mic, FileText } from "lucide-react";
+import { Flame, Target, Mic, FileText, Check } from "lucide-react";
 import { SectionHeading } from "./shared";
 
 function GoalTargets({ completed, target, tone, label }) {
-  const completedCount = Math.min(Number(completed) || 0, target);
+  const completedCount = Math.max(0, Number(completed) || 0);
+  const filledCount = Math.min(completedCount, target);
 
   return (
     <div
       className={`dashboard-goal-targets ${tone}`}
-      style={{ "--goal-progress": `${(completedCount / target) * 100}%` }}
+      style={{ "--goal-progress": `${target ? (filledCount / target) * 100 : 0}%` }}
       role="img"
-      aria-label={`${completedCount} of ${target} ${label} completed`}
+      aria-label={`${completedCount} ${label} completed this week; goal is ${target}`}
     >
       {Array.from({ length: target }, (_, index) => {
-        const isComplete = index < completedCount;
+        const isComplete = index < filledCount;
         return (
           <span key={`${label}-${index}`} className={isComplete ? "complete" : ""} title={`${label} ${index + 1}${isComplete ? " completed" : " pending"}`}>
-            <Target size={15} strokeWidth={isComplete ? 2.7 : 2} />
-            <b>{index + 1}</b>
+            {isComplete ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : <i aria-hidden="true" />}
           </span>
         );
       })}
+    </div>
+  );
+}
+
+function GoalCount({ completed, target }) {
+  const count = Math.max(0, Number(completed) || 0);
+  const status = count < target ? `${target - count} to reach goal` : count > target ? `Goal exceeded by ${count - target}` : "Weekly goal reached";
+
+  return (
+    <div className="shrink-0 text-right">
+      <p className="text-sm font-bold leading-5 text-slate-800 dark:text-slate-100">
+        {count} <span className="font-medium text-slate-500 dark:text-slate-400">this week</span>
+      </p>
+      <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${
+        count >= target
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+      }`}>
+        {status}
+      </span>
     </div>
   );
 }
@@ -57,16 +77,16 @@ export default function ProgressTracker({ profile }) {
                 <FileText className="h-4 w-4 text-blue-500" />
                 Applications
               </div>
-              <span className="text-sm font-medium text-slate-500">
-                {profile.weekly_applications || 0} / {applicationsGoal}
-              </span>
             </div>
-            <GoalTargets
-              completed={profile.weekly_applications}
-              target={applicationsGoal}
-              tone="blue"
-              label="applications"
-            />
+            <div className="flex items-center gap-3">
+              <GoalTargets
+                completed={profile.weekly_applications}
+                target={applicationsGoal}
+                tone="blue"
+                label="applications"
+              />
+              <GoalCount completed={profile.weekly_applications} target={applicationsGoal} />
+            </div>
           </div>
 
           <div>
@@ -75,16 +95,16 @@ export default function ProgressTracker({ profile }) {
                 <Mic className="h-4 w-4 text-emerald-500" />
                 Mock Interviews
               </div>
-              <span className="text-sm font-medium text-slate-500">
-                {profile.weekly_mock_interviews || 0} / {mockInterviewsGoal}
-              </span>
             </div>
-            <GoalTargets
-              completed={profile.weekly_mock_interviews}
-              target={mockInterviewsGoal}
-              tone="green"
-              label="mock interviews"
-            />
+            <div className="flex items-center gap-3">
+              <GoalTargets
+                completed={profile.weekly_mock_interviews}
+                target={mockInterviewsGoal}
+                tone="green"
+                label="mock interviews"
+              />
+              <GoalCount completed={profile.weekly_mock_interviews} target={mockInterviewsGoal} />
+            </div>
           </div>
         </div>
       </div>

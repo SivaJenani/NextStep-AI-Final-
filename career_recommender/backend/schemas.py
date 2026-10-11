@@ -264,7 +264,11 @@ class ResumeAuditSection(BaseModel):
 class ResumeAuditResponse(BaseModel):
     target_role: str
     overall_score: float
+    ats_compatibility_score: float = 0.0
     keyword_match_score: float
+    section_completeness_score: float = 0.0
+    impact_score: float = 0.0
+    scoring_version: int = 6
     role_alignment_score: float
     resume_strength_score: float
     market_readiness_score: float
@@ -460,6 +464,7 @@ class DashboardResponse(BaseModel):
     micro_gap_summary: dict[str, int] = Field(default_factory=dict)
     skill_dna_profiles: list[SkillDnaProfile] = Field(default_factory=list)
     analyzed_listing_count: int = 0
+    skill_evidence: dict[str, Any] = Field(default_factory=dict)
 
 
 class BookmarkCreate(BaseModel):
@@ -511,6 +516,50 @@ class InterviewResponse(BaseModel):
     preparation_tips: list[str]
 
 
+class InterviewAnswerReviewRequest(BaseModel):
+    target_role: str = Field(..., min_length=1, max_length=160)
+    question_type: Literal["technical", "hr"]
+    question: str = Field(..., min_length=1, max_length=1000)
+    answer: str = Field(..., min_length=20, max_length=6000)
+
+
+class InterviewAnswerReviewResponse(BaseModel):
+    is_evaluable: bool = True
+    evaluation_note: str = ""
+    overall_score: int = Field(..., ge=0, le=100)
+    scores: dict[str, int]
+    strengths: list[str]
+    improvements: list[str]
+    sample_answer: str
+    provider: str
+    model: str
+
+
+class InterviewFollowUpRequest(BaseModel):
+    target_role: str = Field(..., min_length=1, max_length=160)
+    question_type: Literal["technical", "hr"]
+    question: str = Field(..., min_length=1, max_length=1000)
+    answer: str = Field(..., min_length=20, max_length=6000)
+    turn: int = Field(default=1, ge=1, le=8)
+
+
+class InterviewFollowUpResponse(BaseModel):
+    question: str
+    interviewer_note: str
+    provider: str
+
+
+class InterviewAudioReviewResponse(BaseModel):
+    transcript: str
+    overall_score: int = Field(..., ge=0, le=100)
+    answer_score: int = Field(..., ge=0, le=100)
+    communication_score: int = Field(..., ge=0, le=100)
+    scores: dict[str, int]
+    strengths: list[str]
+    improvements: list[str]
+    provider: str
+
+
 class InterviewRecordingOut(BaseModel):
     id: int
     target_role: str
@@ -547,8 +596,8 @@ class ChatbotAskRequest(BaseModel):
 class ChatbotResponse(BaseModel):
     question: str
     answer: str
-    provider: str = "openai"
-    model: str = "gpt-4o-mini"
+    provider: str = "ollama"
+    model: str = "llama3.2"
     suggestions: list[str] = Field(default_factory=list)  # Smart follow-up suggestions
 
 

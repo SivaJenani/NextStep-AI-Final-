@@ -5,7 +5,7 @@ import RoadmapTimeline from "../components/RoadmapTimeline";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 import { correctRoleSpelling } from "../utils/opportunityMode";
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const API_BASE_URL = (client.defaults.baseURL || "http://127.0.0.1:8000").replace(/\/$/, "");
 function buildAbsoluteMediaUrl(path) {
   if (!path) {
     return "";
@@ -48,7 +48,64 @@ function formatRecordingStatus(recording) {
   return "Saved to your interview practice library.";
 }
 
-function RecordingPlayback({ recording, onDeleteRecording, compact = false }) {
+function AudioReviewResults({ audioReview, className = "" }) {
+  if (!audioReview || audioReview.error) return null;
+
+  const scoreCards = [
+    ["Overall", audioReview.overall_score],
+    ["Answer", audioReview.answer_score],
+    ["Communication", audioReview.communication_score],
+  ];
+
+  return (
+    <section className={`min-w-0 rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5 ${className}`} aria-label="AI audio review results">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {scoreCards.map(([label, score]) => (
+          <div key={label} className="min-w-0 rounded-xl bg-white p-3 text-center">
+            <p className="break-words text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="mt-1 text-xl font-bold text-slate-900">{score}/100</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Transcript</p>
+      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{audioReview.transcript}</p>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {Object.entries(audioReview.scores || {}).map(([label, score]) => (
+          <div key={label} className="min-w-0 rounded-lg bg-white px-3 py-2 text-sm text-slate-700">
+            <span className="capitalize">{label}</span>: <strong>{score}/100</strong>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-900">Strengths</p>
+          {audioReview.strengths?.length ? (
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+              {audioReview.strengths.map((item, index) => <li key={`audio-strength-${index}`}>{item}</li>)}
+            </ul>
+          ) : <p className="mt-1 text-sm text-slate-500">No clear strengths identified in this response.</p>}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-900">Try next</p>
+          {audioReview.improvements?.length ? (
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+              {audioReview.improvements.map((item, index) => <li key={`audio-improvement-${index}`}>{item}</li>)}
+            </ul>
+          ) : <p className="mt-1 text-sm text-slate-500">No additional changes suggested.</p>}
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-slate-500">Communication feedback is based on the transcript; vocal tone and pronunciation are not scored.</p>
+    </section>
+  );
+}
+
+function RecordingPlayback({ recording, onDeleteRecording, onAnalyzeAudio, audioReview, audioReviewLoading = false, compact = false, showAudioReview = true }) {
+  const [playbackError, setPlaybackError] = useState("");
+
+  useEffect(() => {
+    setPlaybackError("");
+  }, [recording?.url]);
+
   if (!recording) {
     return null;
   }
@@ -74,9 +131,36 @@ function RecordingPlayback({ recording, onDeleteRecording, compact = false }) {
           {recording.status === "saved" ? "Delete saved audio" : "Discard preview"}
         </button>
       </div>
-      <audio controls className="w-full">
-        <source src={recording.url} type={recording.contentType || "audio/webm"} />
-      </audio>
+      <audio
+        controls
+        preload="metadata"
+        src={recording.url}
+        className="w-full"
+        onError={(event) => {
+          const audio = event.currentTarget;
+          const reasons = {
+            1: "Playback was interrupted.",
+            2: "The saved audio could not be loaded. Check the backend connection and try again.",
+            3: "This recording could not be decoded. Record it again using a supported browser format.",
+            4: "This audio format is not supported by the browser.",
+          };
+          setPlaybackError(reasons[audio.error?.code] || "Could not play this recording.");
+        }}
+      />
+      {playbackError && <p role="status" className="text-sm text-rose-700">{playbackError}</p>}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => recording.id && onAnalyzeAudio?.(recording.id)}
+          disabled={!recording.id || audioReviewLoading || recording.status !== "saved"}
+          className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {audioReviewLoading ? "Transcribing and reviewing…" : audioReview ? "Analyze recording again" : "Analyze spoken answer with AI"}
+        </button>
+        {!recording.id && <p className="text-xs text-slate-500">AI audio review is available after the recording finishes saving.</p>}
+        {audioReview?.error && <p role="alert" className="text-sm text-rose-700">{audioReview.error}</p>}
+        {showAudioReview && <AudioReviewResults audioReview={audioReview} />}
+      </div>
     </div>
   );
 }
@@ -457,10 +541,21 @@ function MockInterviewFocusOverlay({
   onStopRecording,
   recording,
   onDeleteRecording,
+  onAnalyzeAudio,
+  audioReview,
+  audioReviewLoading,
   speechSupported,
   onReadAloud,
   onStopReadAloud,
   speakingKey,
+  review,
+  reviewLoading,
+  onReviewAnswer,
+  onNextQuestion,
+  followUpLoading,
+  followUpError,
+  mockTurn,
+  interviewerNote,
   onClose,
 }) {
   const [isListening, setIsListening] = useState(false);
@@ -535,8 +630,9 @@ function MockInterviewFocusOverlay({
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-200">Focus Mode</p>
               <h3 className="mt-3 text-3xl font-bold capitalize">{targetRole}</h3>
               <p className="mt-2 text-sm font-semibold text-blue-100">
-                {prompt.type === "technical" ? "Technical question" : "HR question"} {prompt.index + 1}
+                AI mock interview · {prompt.type === "technical" ? "Technical" : "HR"} round · Turn {mockTurn}
               </p>
+              {interviewerNote && <p className="mt-3 text-sm text-blue-100">{interviewerNote}</p>}
               <p className="mt-4 text-base leading-8 text-slate-100">{prompt.question}</p>
             </div>
             <button
@@ -655,7 +751,14 @@ function MockInterviewFocusOverlay({
               {!recorderSupported && (
                 <p className="mt-3 text-sm text-slate-500">Voice recording is not available in this browser.</p>
               )}
-              <RecordingPlayback recording={recording} onDeleteRecording={onDeleteRecording} />
+              <RecordingPlayback
+                recording={recording}
+                onDeleteRecording={onDeleteRecording}
+                onAnalyzeAudio={onAnalyzeAudio}
+                audioReview={audioReview}
+                audioReviewLoading={audioReviewLoading}
+                showAudioReview={false}
+              />
             </div>
           </div>
 
@@ -679,10 +782,105 @@ function MockInterviewFocusOverlay({
                 id={`focus-note-${promptKey}`}
                 value={note}
                 onChange={(event) => onNoteChange(event.target.value)}
-                placeholder="Write your opening line, key example, metric, and closing reflection..."
+                placeholder="Write the answer you would say aloud. Add a real example, your actions, and the result..."
                 className="field-input mt-3 min-h-56 resize-y"
               />
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">At least 20 characters to get useful feedback.</p>
+                <button
+                  type="button"
+                  onClick={() => onReviewAnswer(prompt.type, prompt.index, prompt.question)}
+                  disabled={reviewLoading || note.trim().length < 20}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {reviewLoading ? "Reviewing answer…" : "Get AI feedback"}
+                </button>
+              </div>
             </div>
+
+            {review && (
+              <div className="rounded-3xl border border-blue-200 bg-blue-50/80 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                      {review.error ? "AI review unavailable" : "AI answer coach"}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {review.error ? "Could not get AI feedback" : !review.is_evaluable ? "Answer needs more detail" : "Personalized AI feedback"}
+                    </p>
+                  </div>
+                  {!review.error && review.is_evaluable && (
+                    <div className="rounded-2xl bg-white px-4 py-2 text-center ring-1 ring-blue-100">
+                      <p className="text-2xl font-bold text-blue-700">{review.overall_score}<span className="text-sm">/100</span></p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Overall</p>
+                    </div>
+                  )}
+                </div>
+                {review.error ? (
+                  <p className="mt-3 text-sm text-rose-700">{review.error}</p>
+                ) : !review.is_evaluable ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="font-semibold text-amber-950">Not scored: this answer needs a clearer response before it can be assessed.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">{review.evaluation_note}</p>
+                    <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
+                      {(review.improvements || []).map((item, index) => <li key={`improvement-${index}`}>{item}</li>)}
+                    </ul>
+                    {review.sample_answer && <p className="mt-3 text-sm font-medium text-slate-700">{review.sample_answer}</p>}
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {Object.entries(review.scores || {}).map(([label, score]) => (
+                        <div key={label} className="rounded-xl bg-white px-3 py-2 ring-1 ring-blue-100">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+                          <p className="mt-1 font-bold text-slate-900">{score}/100</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">What’s working</p>
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
+                          {(review.strengths || []).map((item, index) => <li key={`strength-${index}`}>{item}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">Improve next</p>
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
+                          {(review.improvements || []).map((item, index) => <li key={`improvement-${index}`}>{item}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                    {review.sample_answer && (
+                      <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-blue-100">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Suggested revision</p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{review.sample_answer}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {review && !review.error && review.is_evaluable && mockTurn <= 8 && (
+              <div className="rounded-2xl border border-blue-200 bg-white p-4">
+                <p className="text-sm text-slate-600">Continue the role-specific mock interview. The interviewer will use your answer and profile skills to choose the next question.</p>
+                {followUpError && <p className="mt-2 text-sm text-rose-700">{followUpError}</p>}
+                <button
+                  type="button"
+                  onClick={() => onNextQuestion(prompt.type, prompt.index, prompt.question, note)}
+                  disabled={followUpLoading || note.trim().length < 20}
+                  className="mt-3 rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {followUpLoading ? "Preparing next question…" : "Continue interview"}
+                </button>
+              </div>
+            )}
+            {review && mockTurn > 8 && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">
+                Mock interview complete. You can close this round or review your answer feedback.
+              </div>
+            )}
 
             <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Auto summary</p>
@@ -690,6 +888,7 @@ function MockInterviewFocusOverlay({
             </div>
           </div>
         </div>
+        <AudioReviewResults audioReview={audioReview} className="mx-6 mb-6" />
       </div>
       </div>
     </div>
@@ -717,6 +916,8 @@ function InterviewQuestionColumn({
   notesMap,
   ratingsMap,
   recordingsMap,
+  audioReviewMap,
+  audioReviewLoadingId,
   onToggleExpand,
   onTogglePracticed,
   onStartMock,
@@ -731,6 +932,7 @@ function InterviewQuestionColumn({
   speakingKey,
   recordingKey,
   onDeleteRecording,
+  onAnalyzeAudio,
 }) {
   const answerCues = type === "technical" ? TECHNICAL_CUES : HR_CUES;
 
@@ -848,21 +1050,21 @@ function InterviewQuestionColumn({
                       </div>
 
                       <div className="grid gap-5 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
-                        <div className="rounded-[26px] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_18px_45px_rgba(15,23,42,0.18)]">
+                        <div className="rounded-[26px] border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Scorecard</p>
-                              <p className="mt-2 text-sm leading-6 text-slate-200">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Scorecard</p>
+                              <p className="mt-2 text-sm leading-6 text-slate-600">
                                 Rate the draft, then check whether it covers the signals interviewers look for.
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="text-3xl font-bold tracking-tight">{ratingValue}<span className="text-base text-slate-400">/5</span></p>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">{ANSWER_RATING_LABELS[ratingValue]}</p>
+                              <p className="text-3xl font-bold tracking-tight text-slate-900">{ratingValue}<span className="text-base text-slate-400">/5</span></p>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">{ANSWER_RATING_LABELS[ratingValue]}</p>
                             </div>
                           </div>
 
-                          <div className="mt-4 rounded-2xl bg-white/8 p-4 ring-1 ring-white/10">
+                          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                             <input
                               type="range"
                               min="1"
@@ -870,9 +1072,9 @@ function InterviewQuestionColumn({
                               step="1"
                               value={ratingValue}
                               onChange={(event) => onUpdateRating(type, index, Number(event.target.value))}
-                              className="w-full accent-amber-300"
+                              className="w-full accent-amber-500"
                             />
-                            <div className="mt-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+                            <div className="mt-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                               <span>Needs work</span>
                               <span>Interview ready</span>
                             </div>
@@ -880,12 +1082,12 @@ function InterviewQuestionColumn({
 
                           <div className="mt-4 grid gap-2">
                             {rubricItems.map((item) => (
-                              <div key={`${type}-${index}-${item.label}`} className="rounded-2xl bg-white/8 px-4 py-3 ring-1 ring-white/10">
+                              <div key={`${type}-${index}-${item.label}`} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                                 <div className="flex items-start gap-3">
                                   <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${type === "technical" ? "bg-sky-300" : "bg-emerald-300"}`} />
                                   <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white">{item.label}</p>
-                                    <p className="mt-1 text-sm leading-5 text-slate-200">{item.tip}</p>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-900">{item.label}</p>
+                                    <p className="mt-1 text-sm leading-5 text-slate-600">{item.tip}</p>
                                   </div>
                                 </div>
                               </div>
@@ -961,6 +1163,9 @@ function InterviewQuestionColumn({
                               <RecordingPlayback
                                 recording={recording}
                                 onDeleteRecording={() => onDeleteRecording(promptKey)}
+                                onAnalyzeAudio={onAnalyzeAudio}
+                                audioReview={audioReviewMap[recording.id]}
+                                audioReviewLoading={audioReviewLoadingId === recording.id}
                                 compact
                               />
                             ) : (
@@ -1268,10 +1473,19 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
     "technical-0": true,
     "hr-0": true,
   });
+  const [hydratedStorageKey, setHydratedStorageKey] = useState(null);
   const [practicedMap, setPracticedMap] = useState({});
   const [notesMap, setNotesMap] = useState({});
   const [ratingsMap, setRatingsMap] = useState({});
+  const [answerReviews, setAnswerReviews] = useState({});
+  const [reviewLoadingKey, setReviewLoadingKey] = useState("");
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [followUpError, setFollowUpError] = useState("");
+  const [interviewerNote, setInterviewerNote] = useState("");
+  const [mockTurn, setMockTurn] = useState(1);
   const [recordingsMap, setRecordingsMap] = useState({});
+  const [audioReviews, setAudioReviews] = useState({});
+  const [audioReviewLoadingId, setAudioReviewLoadingId] = useState(null);
   const [activePrompt, setActivePrompt] = useState(null);
   const [timerDuration, setTimerDuration] = useState(300);
   const [timerSeconds, setTimerSeconds] = useState(300);
@@ -1281,6 +1495,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
   const [recordingKey, setRecordingKey] = useState("");
   const [mockFocusOpen, setMockFocusOpen] = useState(false);
   const recordingsRef = useRef({});
+  const promptStartedAtRef = useRef({});
 
   // Practice Analytics States
   const [analytics, setAnalytics] = useState(null);
@@ -1303,6 +1518,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
   }, [recordingsMap]);
 
   useEffect(() => {
+    setHydratedStorageKey(null);
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) {
@@ -1310,6 +1526,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
         setPracticedMap({});
         setNotesMap({});
         setRatingsMap({});
+        setAudioReviews({});
         setActivePrompt(null);
         setTimerDuration(300);
         setTimerSeconds(300);
@@ -1318,6 +1535,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
         setSpeakingKey("");
         setRecordingKey("");
         setMockFocusOpen(false);
+        setHydratedStorageKey(storageKey);
         return;
       }
       const parsed = JSON.parse(raw);
@@ -1325,6 +1543,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
       setPracticedMap(parsed.practicedMap || {});
       setNotesMap(parsed.notesMap || {});
       setRatingsMap(parsed.ratingsMap || {});
+      setAudioReviews(parsed.audioReviews || {});
       setActivePrompt(parsed.activePrompt || null);
       setTimerDuration(parsed.timerDuration || 300);
       setTimerSeconds(parsed.timerSeconds || parsed.timerDuration || 300);
@@ -1333,11 +1552,13 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
       setSpeakingKey("");
       setRecordingKey("");
       setMockFocusOpen(false);
+      setHydratedStorageKey(storageKey);
     } catch {
       setExpandedMap({ "technical-0": true, "hr-0": true });
       setPracticedMap({});
       setNotesMap({});
       setRatingsMap({});
+      setAudioReviews({});
       setActivePrompt(null);
       setTimerDuration(300);
       setTimerSeconds(300);
@@ -1346,10 +1567,16 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
       setSpeakingKey("");
       setRecordingKey("");
       setMockFocusOpen(false);
+      setHydratedStorageKey(storageKey);
     }
   }, [storageKey]);
 
   useEffect(() => {
+    // Do not persist the previous role's in-memory state under a newly selected
+    // role key before that role's saved practice data has finished hydrating.
+    if (hydratedStorageKey !== storageKey) {
+      return;
+    }
     try {
       localStorage.setItem(
         storageKey,
@@ -1358,6 +1585,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           practicedMap,
           notesMap,
           ratingsMap,
+          audioReviews,
           activePrompt,
           timerDuration,
           timerSeconds,
@@ -1366,7 +1594,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
     } catch {
       /* ignore */
     }
-  }, [activePrompt, expandedMap, notesMap, practicedMap, ratingsMap, storageKey, timerDuration, timerSeconds]);
+  }, [activePrompt, audioReviews, expandedMap, hydratedStorageKey, notesMap, practicedMap, ratingsMap, storageKey, timerDuration, timerSeconds]);
 
   useEffect(() => {
     if (!timerRunning) {
@@ -1449,14 +1677,17 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
 
     if (nextVal) {
       try {
-        const ratingVal = ratingsMap[key] || 4;
+        const ratingVal = Number(ratingsMap[key] || 0);
+        const startedAt = promptStartedAtRef.current[key];
+        const elapsedSeconds = startedAt ? Math.max(0, Math.round((Date.now() - startedAt) / 1000)) : 0;
+        delete promptStartedAtRef.current[key];
         await client.post("/roadmap/save-practice", {
           technical_score: type === "technical" ? ratingVal * 20 : 0,
           hr_score: type === "hr" ? ratingVal * 20 : 0,
-          confidence_score: 85,
-          response_time: 12.5,
+          confidence_score: ratingVal * 20,
+          response_time: elapsedSeconds,
           questions_count: 1,
-          correct_count: ratingVal >= 3 ? 1 : 0
+          correct_count: ratingVal > 0 && ratingVal >= 3 ? 1 : 0
         });
         fetchAnalytics();
       } catch {}
@@ -1468,31 +1699,96 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
     setNotesMap((current) => ({ ...current, [key]: value }));
   };
 
-  const updateRating = async (type, index, value) => {
+  const updateRating = (type, index, value) => {
     const key = `${type}-${index}`;
     setRatingsMap((current) => ({ ...current, [key]: value }));
+  };
 
+  const reviewAnswer = async (type, index, question) => {
+    const key = `${type}-${index}`;
+    const answer = String(notesMap[key] || "").trim();
+    if (answer.length < 20 || reviewLoadingKey) {
+      return;
+    }
+
+    setReviewLoadingKey(key);
+    setAnswerReviews((current) => ({ ...current, [key]: null }));
     try {
-      await client.post("/roadmap/save-practice", {
-        technical_score: type === "technical" ? value * 20 : 0,
-        hr_score: type === "hr" ? value * 20 : 0,
-        confidence_score: 85,
-        response_time: 12.5,
-        questions_count: 1,
-        correct_count: value >= 3 ? 1 : 0
+      const { data } = await client.post("/interview/review-answer", {
+        target_role: resolvedTargetRole,
+        question_type: type,
+        question,
+        answer,
       });
-      fetchAnalytics();
-    } catch {}
+      setAnswerReviews((current) => ({ ...current, [key]: data }));
+    } catch (error) {
+      setAnswerReviews((current) => ({
+        ...current,
+        [key]: { error: error.response?.data?.detail || "Could not review this answer. Please try again." },
+      }));
+    } finally {
+      setReviewLoadingKey("");
+    }
+  };
+
+  const reviewRecordingAudio = async (recordingId) => {
+    setAudioReviewLoadingId(recordingId);
+    setAudioReviews((current) => ({ ...current, [recordingId]: null }));
+    try {
+      const { data } = await client.post(`/interview/recordings/${recordingId}/review-audio`);
+      setAudioReviews((current) => ({ ...current, [recordingId]: data }));
+    } catch (error) {
+      const detail = error.response?.data?.detail || "Could not analyze the audio. Please try again.";
+      setAudioReviews((current) => ({ ...current, [recordingId]: { error: detail } }));
+    } finally {
+      setAudioReviewLoadingId(null);
+    }
   };
 
   const startMock = (type, index, question) => {
     const duration = type === "technical" ? 420 : 240;
+    promptStartedAtRef.current[`${type}-${index}`] = Date.now();
     setActivePrompt({ type, index, question });
+    setMockTurn(1);
+    setFollowUpError("");
+    setInterviewerNote("");
     setExpandedMap((current) => ({ ...current, [`${type}-${index}`]: true }));
     setTimerDuration(duration);
     setTimerSeconds(duration);
     setTimerRunning(false);
     setMockFocusOpen(true);
+  };
+
+  const continueMockInterview = async (type, index, question, answer) => {
+    if (followUpLoading || String(answer || "").trim().length < 20) return;
+    setFollowUpLoading(true);
+    setFollowUpError("");
+    try {
+      const { data } = await client.post("/interview/follow-up", {
+        target_role: resolvedTargetRole,
+        question_type: type,
+        question,
+        answer: String(answer).trim(),
+        turn: mockTurn,
+      });
+      const key = `${type}-${index}`;
+      setNotesMap((current) => ({ ...current, [key]: "" }));
+      setAnswerReviews((current) => ({ ...current, [key]: null }));
+      setActivePrompt((current) => current ? { ...current, question: data.question } : current);
+      setMockTurn((current) => current + 1);
+      setInterviewerNote(data.interviewer_note || "Thank you for your answer. Here is a follow-up.");
+      setTimerDuration(type === "technical" ? 420 : 240);
+      setTimerSeconds(type === "technical" ? 420 : 240);
+      setTimerRunning(false);
+      if (speechSupported) {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(data.question));
+      }
+    } catch (error) {
+      setFollowUpError(error.response?.data?.detail || "Could not get the next interview question. Please try again.");
+    } finally {
+      setFollowUpLoading(false);
+    }
   };
 
   const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window;
@@ -1592,7 +1888,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
     });
 
     try {
-      const extension = blob.type === "audio/mp4" ? "m4a" : "webm";
+      const extension = blob.type.toLowerCase().startsWith("audio/mp4") ? "m4a" : "webm";
       const file = new File([blob], `${key}.${extension}`, { type: blob.type || "audio/webm" });
       const formData = new FormData();
       formData.append("audio", file);
@@ -1652,7 +1948,12 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
             }
           });
         } catch (err) {
-          console.warn("Failed with advanced constraints, trying basic audio.", err);
+          // Retry without optional processing only when the device rejects constraints.
+          // Permission and device errors will not be fixed by asking for the same stream again.
+          if (err?.name !== "OverconstrainedError" && err?.name !== "ConstraintNotSatisfiedError") {
+            throw err;
+          }
+          console.warn("Audio constraints were unsupported; retrying with basic audio.", err);
           mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
         }
       }
@@ -1663,7 +1964,12 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
       recordingTargetRef.current = key;
       mediaChunksRef.current = [];
 
-      const recorder = new MediaRecorder(mediaStreamRef.current);
+      const preferredMimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((mimeType) =>
+        MediaRecorder.isTypeSupported(mimeType)
+      );
+      const recorder = preferredMimeType
+        ? new MediaRecorder(mediaStreamRef.current, { mimeType: preferredMimeType })
+        : new MediaRecorder(mediaStreamRef.current);
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -1684,7 +1990,17 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
       setRecordingKey(key);
     } catch (err) {
       console.error("Recording start error:", err);
-      alert("Could not start recording. Please ensure you have granted microphone permissions.");
+      const messages = {
+        NotAllowedError: "Microphone access is blocked. In Chrome, open the site controls beside the address, set Microphone to Allow, then reload this page.",
+        PermissionDeniedError: "Microphone access is blocked. In Chrome, open the site controls beside the address, set Microphone to Allow, then reload this page.",
+        NotFoundError: "No microphone was found. Connect or enable a microphone, then try again.",
+        DevicesNotFoundError: "No microphone was found. Connect or enable a microphone, then try again.",
+        NotReadableError: "The microphone is busy or unavailable. Close other apps using it, then try again.",
+        TrackStartError: "The microphone is busy or unavailable. Close other apps using it, then try again.",
+        SecurityError: "Microphone access requires a secure connection. Open this page on localhost or HTTPS.",
+      };
+      const message = messages[err?.name] || `Could not start recording${err?.message ? `: ${err.message}` : ". Check your microphone and browser permissions, then try again."}`;
+      alert(message);
       setRecordingKey("");
     }
   };
@@ -1778,88 +2094,119 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
   };
 
   const activePromptKey = activePrompt ? `${activePrompt.type}-${activePrompt.index}` : "";
+  const hasPracticeHistory = Boolean(analytics?.history?.length);
+  const hasCompletedPractice = Boolean(analytics?.questions_count || hasPracticeHistory);
+  const lastResponseTime = Number(analytics?.response_time || 0);
+  const formattedResponseTime = lastResponseTime > 0
+    ? `${Math.floor(lastResponseTime / 60)}m ${Math.round(lastResponseTime % 60)}s`
+    : "Not tracked";
 
   return (
-    <section className="space-y-6 print:space-y-4">
+    <section className="flex flex-col gap-6 print:gap-4">
       {/* PRACTICE ANALYTICS PANEL */}
-      <div className="card-panel overflow-hidden border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] print:hidden text-slate-800">
+      <div id="interview-progress" className="card-panel order-5 overflow-hidden border-slate-200 bg-white text-slate-800 shadow-[0_18px_40px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 print:hidden">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-blue-600">Practice Analytics Dashboard</p>
-        <h3 className="mt-3 text-2xl font-bold text-slate-950">Your Rehearsal Performance</h3>
+        <h3 className="mt-3 text-2xl font-bold text-slate-950 dark:text-slate-100">Your Rehearsal Performance</h3>
         
         <div className="grid gap-4 mt-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <span className="text-xs text-slate-500 uppercase font-semibold">Technical Score</span>
-            <span className="block mt-2 text-2xl font-bold text-slate-900">{analytics?.technical_score ? `${Math.round(analytics.technical_score)}%` : "0%"}</span>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Technical Score</span>
+            <span className="mt-2 block text-2xl font-bold text-slate-900 dark:text-slate-100">{hasCompletedPractice ? `${Math.round(analytics?.technical_score || 0)}%` : "—"}</span>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <span className="text-xs text-slate-500 uppercase font-semibold">HR Score</span>
-            <span className="block mt-2 text-2xl font-bold text-slate-900">{analytics?.hr_score ? `${Math.round(analytics.hr_score)}%` : "0%"}</span>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">HR Score</span>
+            <span className="mt-2 block text-2xl font-bold text-slate-900 dark:text-slate-100">{hasCompletedPractice ? `${Math.round(analytics?.hr_score || 0)}%` : "—"}</span>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <span className="text-xs text-slate-500 uppercase font-semibold">Confidence Level</span>
-            <span className="block mt-2 text-2xl font-bold text-slate-900">{analytics?.confidence_score ? `${Math.round(analytics.confidence_score)}%` : "0%"}</span>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Self-rated confidence</span>
+            <span className="mt-2 block text-2xl font-bold text-slate-900 dark:text-slate-100">{hasCompletedPractice ? `${Math.round(analytics?.confidence_score || 0)}%` : "—"}</span>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <span className="text-xs text-slate-500 uppercase font-semibold">Avg Response Time</span>
-            <span className="block mt-2 text-2xl font-bold text-slate-900">{analytics?.response_time ? `${analytics.response_time.toFixed(1)}s` : "0.0s"}</span>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Last practice duration</span>
+            <span className="mt-2 block text-2xl font-bold text-slate-900 dark:text-slate-100">{formattedResponseTime}</span>
           </div>
         </div>
 
         {/* Practice History chart */}
-        <div className="mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Practice History Trend</p>
-          <div className="h-32 w-full flex items-end justify-between gap-2 pt-4 px-2 border-b border-slate-200">
-            {analytics?.history?.length > 0 ? (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Practice History Trend</p>
+          <div className="flex h-32 w-full items-end justify-between gap-2 border-b border-slate-200 px-2 pt-4 dark:border-slate-700">
+            {hasPracticeHistory ? (
               analytics.history.map((session, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                  <div className="w-8 bg-blue-500 hover:bg-blue-600 rounded-t transition-all duration-300" style={{ height: `${Math.max(10, session.technical_score || session.hr_score || 50)}%` }} />
+                  <div className="w-8 bg-blue-500 hover:bg-blue-600 rounded-t transition-all duration-300" style={{ height: `${Math.max(10, Number(session.technical_score ?? session.hr_score ?? 0))}%` }} />
                   <span className="text-[9px] text-slate-400 font-mono">Session {idx + 1}</span>
                 </div>
               ))
             ) : (
-              [60, 68, 75, 82, 88].map((val, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                  <div className="w-8 bg-slate-300/80 rounded-t" style={{ height: `${val}%` }} />
-                  <span className="text-[9px] text-slate-400 font-mono">Mock {idx + 1}</span>
-                </div>
-              ))
+              <div className="flex h-full w-full items-center justify-center text-center text-sm text-slate-500 dark:text-slate-400">
+                Complete a practice question to start your history.
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="card-panel overflow-hidden border-slate-200 bg-white text-slate-950 shadow-[0_18px_45px_rgba(15,23,42,0.06)] print:border-0 print:shadow-none print:p-0">
-        <div className="bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_24%)] p-6">
-          <div className="rounded-[30px] border border-slate-200 bg-white/80 p-6 backdrop-blur-sm">
+      <div id="interview-overview" className="card-panel order-1 overflow-hidden border-slate-200 bg-white text-slate-950 shadow-[0_18px_45px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 print:border-0 print:shadow-none print:p-0">
+        <div className="bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_24%)] p-6 dark:bg-slate-950">
+          <div className="rounded-[30px] border border-slate-200 bg-white/80 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-700">Interview Prep Board</p>
-              <h2 className="mt-3 text-3xl font-bold text-slate-950 sm:text-4xl capitalize">{targetRole || interviewPack.job_role}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                A cleaner prep experience for technical and HR rounds. Review the likely prompts, rehearse with a structure,
-                and use the resource stack on the right before applying or scheduling mocks.
+              <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">Interview Prep Board</p>
+              <h2 className="mt-3 text-3xl font-bold text-slate-950 dark:text-slate-100 sm:text-4xl capitalize">{targetRole || interviewPack.job_role}</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                Practice role-focused technical and HR prompts, shape answers with a clear framework, and track your progress as you rehearse.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Technical</p>
-                <p className="mt-2 text-2xl font-bold text-slate-950">{interviewPack.technical_questions.length}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Technical</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">{interviewPack.technical_questions.length}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">HR</p>
-                <p className="mt-2 text-2xl font-bold text-slate-950">{interviewPack.hr_questions.length}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">HR</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">{interviewPack.hr_questions.length}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Resources</p>
-                <p className="mt-2 text-2xl font-bold text-slate-950">{interviewPack.coding_practice_links.length}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Resources</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">{interviewPack.coding_practice_links.length}</p>
               </div>
+              <button
+                type="button"
+                onClick={chooseRandomPrompt}
+                className="rounded-2xl bg-slate-950 px-4 py-3 text-left text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-700 sm:col-span-3"
+              >
+                Start a quick mock round <span aria-hidden="true">→</span>
+              </button>
             </div>
           </div>
           </div>
         </div>
       </div>
 
+      <nav aria-label="Interview preparation sections" className="order-2 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950 print:hidden">
+        {[
+          { id: "interview-questions", label: "1. Practice Questions" },
+          { id: "interview-tools", label: "2. Practice Tools" },
+          { id: "interview-progress", label: "3. Your Progress" },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      <div id="interview-questions" className="order-3 scroll-mt-6 space-y-3">
+        <div className="px-1">
+          <h3 className="text-xl font-bold text-slate-950 dark:text-slate-100">1. Practice Questions</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Choose a category, then open a prompt to prepare or record your answer.</p>
+        </div>
       <div className="flex flex-wrap gap-2 print:hidden">
         {[
           { id: "all", label: "All prompts" },
@@ -1903,6 +2250,8 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           notesMap={notesMap}
           ratingsMap={ratingsMap}
           recordingsMap={recordingsMap}
+          audioReviewMap={audioReviews}
+          audioReviewLoadingId={audioReviewLoadingId}
           onToggleExpand={toggleExpand}
           onTogglePracticed={togglePracticed}
           onStartMock={startMock}
@@ -1917,6 +2266,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           speakingKey={speakingKey}
           recordingKey={recordingKey}
           onDeleteRecording={deleteRecording}
+          onAnalyzeAudio={reviewRecordingAudio}
           icon={
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.621-.504-1.125-1.125-1.125H6.75A2.25 2.25 0 004.5 7.212v9.576a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V10.5m-5.25-4.413L19.5 10.5m0 0h-3.75m3.75 0V6.75" />
@@ -1944,6 +2294,8 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           notesMap={notesMap}
           ratingsMap={ratingsMap}
           recordingsMap={recordingsMap}
+          audioReviewMap={audioReviews}
+          audioReviewLoadingId={audioReviewLoadingId}
           onToggleExpand={toggleExpand}
           onTogglePracticed={togglePracticed}
           onStartMock={startMock}
@@ -1958,6 +2310,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           speakingKey={speakingKey}
           recordingKey={recordingKey}
           onDeleteRecording={deleteRecording}
+          onAnalyzeAudio={reviewRecordingAudio}
           icon={
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0ZM4.5 19.125a7.5 7.5 0 0115 0" />
@@ -1965,6 +2318,11 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           }
         />
 
+        <div id="interview-tools" className="scroll-mt-6 space-y-3">
+        <div className="px-1">
+          <h3 className="text-xl font-bold text-slate-950 dark:text-slate-100">2. Practice Tools</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage your timer, notes, self-rating, and voice recordings.</p>
+        </div>
         <InterviewResourcesPanel
           interviewPack={interviewPack}
           targetRole={targetRole}
@@ -1994,6 +2352,8 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           onExportNotes={exportNotes}
           currentFilterLabel={filterLabelMap[interviewFilter] || "All prompts"}
         />
+        </div>
+      </div>
       </div>
 
       {mockFocusOpen && activePrompt && (
@@ -2025,10 +2385,21 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
           onStopRecording={stopRecording}
           recording={recordingsMap[activePromptKey]}
           onDeleteRecording={() => deleteRecording(activePromptKey)}
+          onAnalyzeAudio={reviewRecordingAudio}
+          audioReview={audioReviews[recordingsMap[activePromptKey]?.id]}
+          audioReviewLoading={audioReviewLoadingId === recordingsMap[activePromptKey]?.id}
           speechSupported={speechSupported}
           onReadAloud={readAloud}
           onStopReadAloud={stopReadAloud}
           speakingKey={speakingKey}
+          review={answerReviews[activePromptKey]}
+          reviewLoading={reviewLoadingKey === activePromptKey}
+          onReviewAnswer={reviewAnswer}
+          onNextQuestion={continueMockInterview}
+          followUpLoading={followUpLoading}
+          followUpError={followUpError}
+          mockTurn={mockTurn}
+          interviewerNote={interviewerNote}
           onClose={() => setMockFocusOpen(false)}
         />
       )}
@@ -2261,6 +2632,28 @@ export default function RoadmapPage({ view = "roadmap" }) {
         const role = data.desired_role || "";
         setTargetRole(role);
         setNeedsProfile(false);
+
+        // Interview Prep only needs the interview pack. Avoid blocking this
+        // route on the much heavier career roadmap generation request.
+        if (view === "interview") {
+          try {
+            const params = role.trim() ? { role: role.trim() } : {};
+            const interviewResponse = await client.get("/interview/questions", { params });
+            if (!ignore) {
+              setInterviewPack(interviewResponse.data);
+            }
+          } catch (error) {
+            if (!ignore) {
+              setInterviewPack(null);
+              setMessage(error.response?.data?.detail || "Unable to load interview preparation. Please try again.");
+            }
+          } finally {
+            if (!ignore) {
+              setInitialLoading(false);
+            }
+          }
+          return;
+        }
 
         fetchProgress();
         fetchMentorSuggestion();

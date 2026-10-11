@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  Bot,
   Bookmark,
+  ClipboardCheck,
+  Compass,
   ChevronDown,
   FileText,
   LayoutDashboard,
   Lightbulb,
   LogOut,
-  Map,
+  Route,
   Menu,
-  Sparkles,
+  MessageCircle,
   User,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -20,14 +21,13 @@ import GlobalSearch from "./GlobalSearch";
 const publicNavItems = [{ label: "Dashboard", to: "/", Icon: LayoutDashboard }];
 const privateNavItems = [
   { label: "Dashboard", to: "/dashboard", Icon: LayoutDashboard },
-  { label: "Profile", to: "/profile", Icon: User },
-  { label: "Recommendations", to: "/recommendations", Icon: Sparkles },
+  { label: "Recommendations", to: "/recommendations", Icon: Compass },
   { label: "Skill Gap", to: "/skill-gap", Icon: Lightbulb },
-  { label: "Roadmap", to: "/roadmap", Icon: Map },
-  { label: "Interview Prep", to: "/interview-prep", Icon: Bot },
+  { label: "Roadmap", to: "/roadmap", Icon: Route },
+  { label: "Interview Prep", to: "/interview-prep", Icon: ClipboardCheck },
   { label: "Resume", to: "/resume", Icon: FileText },
   { label: "Bookmarks", to: "/bookmarks", Icon: Bookmark },
-  { label: "AI Mentor", to: "/chatbot", Icon: Bot },
+  { label: "AI Mentor", to: "/chatbot", Icon: MessageCircle },
 ];
 
 function profileStorageKey(user, key) {

@@ -384,6 +384,7 @@ export default function Charts({ model }) {
           })}
         </div>
       </div>
+
     </section>
   );
 }

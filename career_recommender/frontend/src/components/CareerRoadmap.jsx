@@ -11,27 +11,27 @@ import '@xyflow/react/dist/style.css';
 import { User, Briefcase, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const UserNode = ({ data }) => (
-  <div className="bg-white border-2 border-indigo-500 rounded-xl p-3 shadow-lg flex items-center gap-3 w-48">
+  <div className="bg-white border-2 border-indigo-500 rounded-2xl p-4 shadow-md flex items-center gap-3 w-56">
     <div className="bg-indigo-100 p-2 rounded-lg">
       <User className="text-indigo-600 h-5 w-5" />
     </div>
     <div>
-      <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">Candidate</p>
-      <p className="text-[10px] text-slate-500 font-medium truncate">{data.name || "You"}</p>
+      <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">Your profile</p>
+      <p className="text-xs text-slate-600 font-medium truncate">{data.name || "You"}</p>
     </div>
     <Handle type="source" position={Position.Right} className="w-2 h-2 bg-indigo-500" />
   </div>
 );
 
 const TargetNode = ({ data }) => (
-  <div className="bg-white border-2 border-emerald-500 rounded-xl p-3 shadow-lg flex items-center gap-3 w-48">
+  <div className="bg-white border-2 border-emerald-500 rounded-2xl p-4 shadow-md flex items-center gap-3 w-60">
     <Handle type="target" position={Position.Left} className="w-2 h-2 bg-emerald-500" />
     <div className="bg-emerald-100 p-2 rounded-lg">
       <Briefcase className="text-emerald-600 h-5 w-5" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-xs font-bold text-slate-800 uppercase tracking-wide truncate">Target Role</p>
-      <p className="text-[10px] text-slate-500 font-medium truncate">{data.role || "Dream Job"}</p>
+      <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">Target role</p>
+      <p className="text-xs text-slate-600 font-medium truncate">{data.role || "Dream Job"}</p>
     </div>
   </div>
 );
@@ -39,14 +39,14 @@ const TargetNode = ({ data }) => (
 const SkillNode = ({ data }) => {
   const isMatch = data.isMatch;
   return (
-    <div className={`bg-white border-2 rounded-full px-4 py-1.5 shadow-sm flex items-center gap-2 ${isMatch ? 'border-emerald-400' : 'border-rose-400'}`}>
+    <div className={`bg-white border-2 rounded-full px-4 py-2 shadow-sm flex items-center gap-2 ${isMatch ? 'border-emerald-400' : 'border-rose-400'}`}>
       <Handle type="target" position={Position.Left} className={`w-1.5 h-1.5 ${isMatch ? 'bg-emerald-400' : 'bg-rose-400'}`} />
       {isMatch ? (
         <CheckCircle2 className="text-emerald-500 h-3 w-3" />
       ) : (
         <AlertCircle className="text-rose-500 h-3 w-3" />
       )}
-      <span className="text-xs font-bold text-slate-700">{data.label}</span>
+      <span className="text-sm font-semibold text-slate-700">{data.label}</span>
       <Handle type="source" position={Position.Right} className={`w-1.5 h-1.5 ${isMatch ? 'bg-emerald-400' : 'bg-rose-400'}`} />
     </div>
   );
@@ -61,7 +61,7 @@ const nodeTypes = {
 export default function CareerRoadmap({ originalSkills = [], missingSkills = [], targetRole = "Target Role" }) {
   const nodes = useMemo(() => {
     const totalSkills = originalSkills.length + missingSkills.length;
-    const verticalSpacing = 45;
+    const verticalSpacing = 60;
     const startY = -((totalSkills - 1) * verticalSpacing) / 2;
 
     const initialNodes = [
@@ -74,7 +74,7 @@ export default function CareerRoadmap({ originalSkills = [], missingSkills = [],
       {
         id: 'target',
         type: 'targetNode',
-        position: { x: 600, y: 0 },
+        position: { x: 760, y: 0 },
         data: { role: targetRole },
       }
     ];
@@ -86,7 +86,7 @@ export default function CareerRoadmap({ originalSkills = [], missingSkills = [],
       initialNodes.push({
         id: `match-${index}`,
         type: 'skillNode',
-        position: { x: 300, y: currentY },
+        position: { x: 380, y: currentY },
         data: { label: skill, isMatch: true },
       });
       currentY += verticalSpacing;
@@ -97,7 +97,7 @@ export default function CareerRoadmap({ originalSkills = [], missingSkills = [],
       initialNodes.push({
         id: `miss-${index}`,
         type: 'skillNode',
-        position: { x: 300, y: currentY },
+        position: { x: 380, y: currentY },
         data: { label: skill, isMatch: false },
       });
       currentY += verticalSpacing;
@@ -149,19 +149,27 @@ export default function CareerRoadmap({ originalSkills = [], missingSkills = [],
   }, [originalSkills, missingSkills]);
 
   return (
-    <div className="w-full h-[500px] border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-medium text-slate-600">
+        <span className="font-semibold text-slate-800">How to read this map:</span>
+        <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Skill already in your profile</span>
+        <span className="inline-flex items-center gap-2"><AlertCircle className="h-4 w-4 text-rose-500" /> Skill to develop</span>
+      </div>
+      <div className="w-full h-[440px] border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 shadow-inner">
       <ReactFlow 
         nodes={nodes} 
         edges={edges} 
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.5}
+        fitViewOptions={{ padding: 0.16, minZoom: 0.8, maxZoom: 1.25 }}
+        onInit={(flow) => requestAnimationFrame(() => flow.fitView({ padding: 0.16, minZoom: 0.8, maxZoom: 1.25 }))}
+        minZoom={0.65}
         maxZoom={2}
       >
         <Background color="#cbd5e1" gap={16} />
         <Controls />
       </ReactFlow>
+      </div>
     </div>
   );
 }

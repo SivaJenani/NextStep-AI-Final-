@@ -126,6 +126,32 @@ export function SkillModal({ detail, onClose }) {
           </div>
         </div>
 
+        {detail.status === "missing" && (
+          <section className="dashboard-skill-evidence-section">
+            <div className="dashboard-skill-evidence-heading">
+              <h3>Why this is a gap</h3>
+              <span>
+                {detail.evidence?.listing_count || 0} of {detail.evidence?.listings_analyzed || 0} listings
+              </span>
+            </div>
+            {detail.evidence?.listings?.length ? (
+              <>
+                <p>This skill was marked missing in these matching job listings:</p>
+                <ul>
+                  {detail.evidence.listings.map((listing, index) => (
+                    <li key={`${listing.job_title}-${listing.company_name}-${index}`}>
+                      <strong>{listing.job_title}</strong>
+                      <span>{listing.company_name} · {listing.location}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>The current job feed did not return a listing-level signal for this skill. It may still be suggested from the wider skill-family analysis.</p>
+            )}
+          </section>
+        )}
+
         <div className="dashboard-skill-meta-grid">
           <div className="dashboard-skill-meta-card">
             <div className="dashboard-skill-meta-icon"><Gauge size={20} /></div>

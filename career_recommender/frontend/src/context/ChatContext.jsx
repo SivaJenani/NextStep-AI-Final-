@@ -228,7 +228,12 @@ export const ChatProvider = ({ children }) => {
       });
 
       const answer = response.data?.answer || "I couldn't get a response. Please try again.";
-      setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: answer,
+        provider: response.data?.provider,
+        model: response.data?.model,
+      }]);
       setSuggestions(response.data?.suggestions || []);
       
       const shouldSpeak = (isVoice || currentInterviewMode) && !isMuted;

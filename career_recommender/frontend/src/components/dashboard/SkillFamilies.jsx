@@ -2,7 +2,7 @@ import { ChevronDown, Target } from "lucide-react";
 import { EmptyState, ProgressBar, SectionHeading } from "./shared";
 import { buildSkillDetail, estimateHours, getPriority } from "./utils";
 
-function SkillList({ title, skills, status, family, demand = 0, onOpenSkill }) {
+function SkillList({ title, skills, status, family, demand = 0, skillEvidence, onOpenSkill }) {
   return (
     <div className="dashboard-skill-list">
       <h4>{title}</h4>
@@ -12,7 +12,10 @@ function SkillList({ title, skills, status, family, demand = 0, onOpenSkill }) {
             key={`${title}-${skill}`}
             type="button"
             className={`dashboard-chip dashboard-gene-${status}`}
-            onClick={() => onOpenSkill(buildSkillDetail(skill, status, family, demand))}
+            onClick={() => onOpenSkill({
+              ...buildSkillDetail(skill, status, family, demand),
+              evidence: status === "missing" ? skillEvidence?.[skill.toLowerCase()] : undefined,
+            })}
           >
             {skill}
           </button>
@@ -22,7 +25,7 @@ function SkillList({ title, skills, status, family, demand = 0, onOpenSkill }) {
   );
 }
 
-function SkillFamilyCard({ family, expanded, onToggle, onOpenSkill }) {
+function SkillFamilyCard({ family, expanded, onToggle, skillEvidence, onOpenSkill }) {
   const priority = getPriority(family.gap_level, family.demand_count);
   const nextSkill = family.adjacent_next_skills?.[0] || family.missing_micro_skills?.[0] || "Portfolio proof";
   const hours = estimateHours(nextSkill, family.demand_count);
@@ -47,22 +50,25 @@ function SkillFamilyCard({ family, expanded, onToggle, onOpenSkill }) {
       <ProgressBar value={family.current_level} tone={tone} />
       <div className="dashboard-family-next">
         <span>Next recommended skill</span>
-        <button type="button" onClick={() => onOpenSkill(buildSkillDetail(nextSkill, "missing", family.family, family.demand_count))}>
+        <button type="button" onClick={() => onOpenSkill({
+          ...buildSkillDetail(nextSkill, "missing", family.family, family.demand_count),
+          evidence: skillEvidence?.[nextSkill.toLowerCase()],
+        })}>
           {nextSkill} - {hours}h estimate
         </button>
       </div>
       {expanded && (
         <div className="dashboard-family-details">
-          <SkillList title="Skills already mastered" skills={family.matched_micro_skills || []} status="matched" family={family.family} onOpenSkill={onOpenSkill} />
-          <SkillList title="Missing micro-skills" skills={family.missing_micro_skills || []} status="missing" family={family.family} demand={family.demand_count} onOpenSkill={onOpenSkill} />
-          <SkillList title="Next skill path" skills={family.adjacent_next_skills || []} status="partial" family={family.family} demand={family.demand_count} onOpenSkill={onOpenSkill} />
+          <SkillList title="Skills already mastered" skills={family.matched_micro_skills || []} status="matched" family={family.family} skillEvidence={skillEvidence} onOpenSkill={onOpenSkill} />
+          <SkillList title="Missing micro-skills" skills={family.missing_micro_skills || []} status="missing" family={family.family} demand={family.demand_count} skillEvidence={skillEvidence} onOpenSkill={onOpenSkill} />
+          <SkillList title="Next skill path" skills={family.adjacent_next_skills || []} status="partial" family={family.family} demand={family.demand_count} skillEvidence={skillEvidence} onOpenSkill={onOpenSkill} />
         </div>
       )}
     </article>
   );
 }
 
-export default function SkillFamilies({ families, expandedFamilies, onToggleFamily, onOpenSkill }) {
+export default function SkillFamilies({ families, expandedFamilies, skillEvidence, onToggleFamily, onOpenSkill }) {
   return (
     <section className="dashboard-card">
       <SectionHeading icon={Target} title="Skill Family Cards" />
@@ -71,6 +77,7 @@ export default function SkillFamilies({ families, expandedFamilies, onToggleFami
           <SkillFamilyCard
             key={family.family}
             family={family}
+            skillEvidence={skillEvidence}
             expanded={Boolean(expandedFamilies[family.family])}
             onToggle={() => onToggleFamily(family.family)}
             onOpenSkill={onOpenSkill}

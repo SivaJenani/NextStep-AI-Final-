@@ -985,7 +985,25 @@ def _section_checks(resume_text: str, user_name: str = "") -> tuple[list[dict], 
         "detail": "List languages you speak (e.g. English, Hindi, German) for global opportunities." if not languages_present else "Languages section is present."
     })
 
-    score = round((sum(1 for item in checks if item["present"]) / 14.0) * 100, 2)
+    # Weight resume evidence by usefulness to role matching. Projects and a
+    # professional summary carry more value than optional profile links.
+    section_weights = {
+        "Full Name": 3,
+        "Email Address": 3,
+        "Phone Number": 2,
+        "LinkedIn Profile": 1,
+        "GitHub/Portfolio": 2,
+        "Professional Summary": 12,
+        "Technical Skills": 15,
+        "Soft Skills": 10,
+        "Work Experience": 15,
+        "Projects": 22,
+        "Education": 10,
+        "Certifications": 3,
+        "Achievements": 2,
+        "Languages": 1,
+    }
+    score = round(sum(section_weights[item["title"]] for item in checks if item["present"]), 2)
     return checks, score
 
 
@@ -1076,14 +1094,18 @@ def generate_resume_audit(profile, jobs: list[dict], target_role: str | None = N
 
     section_checks, section_score = _section_checks(resume_text, user_name)
     impact_score, impact_signals = _impact_score(resume_text)
-    resume_strength_score = round((section_score * 0.6) + (impact_score * 0.4), 2)
+    resume_strength_score = round((section_score * 0.75) + (impact_score * 0.25), 2)
     market_readiness_score = _market_readiness_score(candidate_skills, jobs)
+    # Strict compatibility requires both strong role keywords and a complete,
+    # parseable resume structure; strength in one cannot fully offset the other.
+    ats_compatibility_score = round((keyword_match_score * section_score) / 100, 2)
 
     overall_score = round(
-        (keyword_match_score * 0.35)
-        + (role_alignment_score * 0.25)
-        + (resume_strength_score * 0.20)
-        + (market_readiness_score * 0.20),
+        (keyword_match_score * 0.20)
+        + (role_alignment_score * 0.15)
+        + (section_score * 0.45)
+        + (impact_score * 0.10)
+        + (market_readiness_score * 0.10),
         2,
     )
 
@@ -1119,7 +1141,11 @@ def generate_resume_audit(profile, jobs: list[dict], target_role: str | None = N
     return {
         "target_role": resolved_role,
         "overall_score": overall_score,
+        "ats_compatibility_score": ats_compatibility_score,
         "keyword_match_score": round(keyword_match_score, 2),
+        "section_completeness_score": section_score,
+        "impact_score": impact_score,
+        "scoring_version": 6,
         "role_alignment_score": round(role_alignment_score, 2),
         "resume_strength_score": round(resume_strength_score, 2),
         "market_readiness_score": round(market_readiness_score, 2),

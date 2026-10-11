@@ -2,16 +2,19 @@ import { Clock, TrendingUp, Zap } from "lucide-react";
 import { EmptyState, SectionHeading } from "./shared";
 import { buildSkillDetail, estimateHours } from "./utils";
 
-export default function QuickWinsPanel({ quickWins, onOpenSkill }) {
+export default function QuickWinsPanel({ quickWins, skillEvidence, onOpenSkill }) {
   return (
-    <section className="dashboard-card">
+    <section className="dashboard-card dashboard-quick-wins-panel">
       <SectionHeading icon={Zap} title="Quick Wins" />
       <div className="dashboard-quick-grid">
         {quickWins.length ? quickWins.map((item) => {
           const hours = estimateHours(item.skill, item.demand_count);
           return (
             <article key={`${item.family}-${item.skill}`} className="dashboard-quick-card">
-              <button type="button" onClick={() => onOpenSkill(buildSkillDetail(item.skill, "missing", item.family, item.demand_count))}>
+              <button type="button" onClick={() => onOpenSkill({
+                ...buildSkillDetail(item.skill, "missing", item.family, item.demand_count),
+                evidence: skillEvidence?.[item.skill.toLowerCase()],
+              })}>
                 {item.skill}
               </button>
               <p>{item.note || "Fast adjacent skill based on your current profile."}</p>

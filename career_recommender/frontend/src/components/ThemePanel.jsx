@@ -9,8 +9,28 @@ const options = [
 export default function ThemePanel({ compact = false }) {
   const { theme, setTheme } = useTheme();
 
+  if (compact) {
+    const isDark = theme === "dark";
+    const Icon = isDark ? Sun : Moon;
+
+    return (
+      <button
+        type="button"
+        className={`theme-toggle-compact ${isDark ? "is-dark" : "is-light"}`}
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+        aria-pressed={isDark}
+        title={`Switch to ${isDark ? "light" : "dark"} theme`}
+      >
+        <span className="theme-toggle-compact-icon" aria-hidden="true">
+          <Icon className="h-5 w-5" strokeWidth={2.4} />
+        </span>
+      </button>
+    );
+  }
+
   return (
-    <div className={`theme-panel ${compact ? "theme-panel-compact" : ""}`} aria-label="Theme selector">
+    <div className="theme-panel" aria-label="Theme selector">
       {options.map(({ value, label, Icon }) => {
         const isActive = theme === value;
 

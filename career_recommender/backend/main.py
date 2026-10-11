@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import time
+from functools import lru_cache
 import httpx
 from urllib.parse import urlparse
 from pathlib import Path
@@ -52,6 +53,24 @@ BACKEND_DIR = Path(__file__).resolve().parent
 MEDIA_DIR = BACKEND_DIR / "media"
 INTERVIEW_RECORDINGS_DIR = MEDIA_DIR / "interview_recordings"
 INTERVIEW_RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@lru_cache(maxsize=1)
+def _get_local_whisper_model():
+    """Load Faster-Whisper once per backend process; model files are cached locally."""
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Local audio transcription is not installed. Activate the backend virtual environment and run: python -m pip install faster-whisper",
+        ) from exc
+
+    return WhisperModel(
+        os.getenv("WHISPER_MODEL", "base"),
+        device=os.getenv("WHISPER_DEVICE", "cpu"),
+        compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"),
+    )
 
 # ---------------------------------------------------------------------
 # Redis (optional)
@@ -554,30 +573,14 @@ def get_live_market_context(role: str, question: str) -> str:
         return ""
 
 
-async def generate_openai_chat_response(
+async def generate_ai_chat_response(
     question: str,
     profile,
     messages: list[schemas.ChatMessage] | None = None,
     recommendation_bundle: dict | None = None,
     resume_audit: dict | None = None,
     bookmarks: list[models.Bookmark] | None = None,
-) -> tuple[str, str, list[str]]:
-    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
-    if not api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="OpenAI chat is not configured yet. Add OPENAI_API_KEY to backend/.env and restart the FastAPI server.",
-        )
-
-    try:
-        from openai import OpenAI
-    except ImportError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail="OpenAI SDK is not installed. Run pip install -r backend/requirements.txt and restart the FastAPI server.",
-        ) from exc
-
-    model = _get_openai_chat_model()
+) -> tuple[str, str, str, list[str]]:
     context_payload = _build_openai_chat_context(
         question,
         profile,
@@ -612,7 +615,7 @@ async def generate_openai_chat_response(
         )
     else:
         system_prompt = (
-            "You are an OpenAI-powered career mentor inside a job-search platform. "
+            "You are an AI career mentor inside a job-search platform. "
             "Answer using only the provided user context when possible, and be specific to that context. "
             "If data is missing, say what is missing instead of inventing details. "
             "Keep answers practical, encouraging, and concise. "
@@ -655,40 +658,71 @@ async def generate_openai_chat_response(
         input_messages.append({"role": item["role"], "content": item["text"]})
     input_messages.append({"role": "user", "content": question.strip()})
 
-    def _run_openai_request() -> str:
-        client = OpenAI(api_key=api_key, timeout=45.0)
-        response = client.chat.completions.create(
-            model=model,
-            messages=input_messages,
-        )
-        return (response.choices[0].message.content or "").strip()
+    provider = (os.getenv("CHATBOT_AI_PROVIDER") or "ollama").strip().lower()
+    if provider == "ollama":
+        model = (os.getenv("OLLAMA_MODEL") or "llama3.2").strip()
+        ollama_url = (os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434").rstrip("/")
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(180.0, connect=5.0)) as client:
+                response = await client.post(
+                    f"{ollama_url}/api/chat",
+                    json={
+                        "model": model,
+                        "messages": input_messages,
+                        "stream": False,
+                        "options": {"temperature": 0.35},
+                    },
+                )
+                if response.status_code == 404:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"Ollama model '{model}' is not installed. Run 'ollama run {model}' and retry.",
+                    )
+                response.raise_for_status()
+                answer = str(response.json().get("message", {}).get("content", "")).strip()
+        except HTTPException:
+            raise
+        except httpx.ConnectError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="The local AI is not running. Start Ollama, then retry your message.",
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise HTTPException(status_code=504, detail="The local AI took too long to respond. Please try again.") from exc
+        except httpx.HTTPError as exc:
+            logger.exception("Ollama chatbot request failed: %s", exc)
+            raise HTTPException(status_code=502, detail="Ollama could not generate a response. Please try again.") from exc
+        provider = "ollama"
+    elif provider == "openai":
+        api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+        if not api_key:
+            raise HTTPException(status_code=503, detail="Set OPENAI_API_KEY in backend/.env or choose Ollama for local AI.")
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise HTTPException(status_code=503, detail="OpenAI SDK is not installed. Install backend requirements and restart.") from exc
 
-    try:
-        answer = await asyncio.to_thread(_run_openai_request)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("OpenAI chat request failed: %s", exc)
-        error_text = str(exc).lower()
-        if exc.__class__.__name__ == "RateLimitError" or "rate limit" in error_text or "rate_limit" in error_text:
-            fallback_answer = generate_chat_response(
-                question,
-                profile,
-                recommendation_bundle=recommendation_bundle,
-                resume_audit=resume_audit,
-                bookmarks=bookmarks,
-            )
-            suggestions = _generate_suggestions(question, profile, recommendation_bundle)
-            return fallback_answer, "local-fallback", suggestions
-        raise HTTPException(status_code=502, detail="OpenAI could not generate a response right now.") from exc
+        model = _get_openai_chat_model()
+        try:
+            def _run_openai_request() -> str:
+                client = OpenAI(api_key=api_key, timeout=45.0)
+                response = client.chat.completions.create(model=model, messages=input_messages)
+                return (response.choices[0].message.content or "").strip()
+
+            answer = await asyncio.to_thread(_run_openai_request)
+        except Exception as exc:
+            logger.exception("OpenAI chat request failed: %s", exc)
+            raise HTTPException(status_code=502, detail="OpenAI could not generate a response right now.") from exc
+    else:
+        raise HTTPException(status_code=503, detail="CHATBOT_AI_PROVIDER must be set to 'ollama' or 'openai'.")
 
     if not answer:
-        raise HTTPException(status_code=502, detail="OpenAI returned an empty response. Please try again.")
+        raise HTTPException(status_code=502, detail=f"{provider.title()} returned an empty response. Please try again.")
 
     # Generate smart follow-up suggestions based on the question topic
     suggestions = _generate_suggestions(question, profile, recommendation_bundle)
     
-    return answer, model, suggestions
+    return answer, provider, model, suggestions
 
 
 def _generate_suggestions(question: str, profile, recommendation_bundle: dict | None = None) -> list[str]:
@@ -1220,6 +1254,12 @@ async def upload_resume(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if resume is None and file is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Upload a valid resume PDF to build your profile. LinkedIn PDFs or certificates alone cannot be analyzed as a resume.",
+        )
+
     uploads: list[tuple[str, UploadFile | None]] = [
         ("resume", resume or file),
         ("linkedin", linkedin_pdf),
@@ -1436,6 +1476,27 @@ async def record_feedback(
 # ---------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------
+def _build_dashboard_skill_evidence(jobs: list[dict]) -> dict[str, dict]:
+    evidence: dict[str, list[dict]] = {}
+    for job in jobs:
+        for skill in normalize_skills(job.get("missing_skills") or []):
+            evidence.setdefault(skill, []).append({
+                "job_title": job.get("job_title") or "Recommended role",
+                "company_name": job.get("company_name") or "Company not listed",
+                "location": job.get("location") or "Location not listed",
+            })
+
+    analyzed_count = len(jobs)
+    return {
+        skill: {
+            "listing_count": len(listings),
+            "listings_analyzed": analyzed_count,
+            "listings": listings[:5],
+        }
+        for skill, listings in evidence.items()
+    }
+
+
 @app.get("/dashboard/skills", response_model=schemas.DashboardResponse)
 async def skill_dashboard(
     current_user: models.User = Depends(get_current_user),
@@ -1453,6 +1514,7 @@ async def skill_dashboard(
         "micro_gap_summary": bundle.get("micro_gap_summary", {}),
         "skill_dna_profiles": bundle.get("skill_dna_profiles", []),
         "analyzed_listing_count": len(bundle.get("jobs", [])),
+        "skill_evidence": _build_dashboard_skill_evidence(bundle.get("jobs", [])),
     }
 
 
@@ -1631,10 +1693,14 @@ def save_practice(
 ):
     progress = get_or_create_progress(db, current_user.id)
     practice = dict(progress.interview_practice or {})
-    practice["technical_score"] = payload.technical_score
-    practice["hr_score"] = payload.hr_score
-    practice["confidence_score"] = payload.confidence_score
-    practice["response_time"] = payload.response_time
+    if payload.technical_score > 0:
+        practice["technical_score"] = payload.technical_score
+    if payload.hr_score > 0:
+        practice["hr_score"] = payload.hr_score
+    if payload.confidence_score > 0:
+        practice["confidence_score"] = payload.confidence_score
+    if payload.response_time > 0:
+        practice["response_time"] = payload.response_time
     practice["questions_count"] = practice.get("questions_count", 0) + payload.questions_count
     practice["correct_count"] = practice.get("correct_count", 0) + payload.correct_count
     
@@ -2064,7 +2130,7 @@ async def chatbot_ask(
         .all()
     )
 
-    answer, model, suggestions = await generate_openai_chat_response(
+    answer, provider, model, suggestions = await generate_ai_chat_response(
         payload.question,
         profile,
         messages=payload.messages,
@@ -2076,7 +2142,7 @@ async def chatbot_ask(
     return {
         "question": payload.question,
         "answer": answer,
-        "provider": "openai",
+        "provider": provider,
         "model": model,
         "suggestions": suggestions,
     }
@@ -2105,6 +2171,135 @@ def interview_questions(
         profile.skills or [],
         profile.experience_level,
     )
+
+
+def _interview_ai_http_error(exc: Exception, action: str) -> HTTPException:
+    error_code = str(getattr(exc, "code", "") or "")
+    upstream_status = getattr(exc, "status_code", None)
+    if error_code == "credit_balance_exhausted":
+        return HTTPException(status_code=402, detail="OpenAI has no API credits available for this request.")
+    if upstream_status == 429:
+        return HTTPException(status_code=429, detail="OpenAI rate limit reached. Wait a moment, then try again.")
+    if upstream_status == 401:
+        return HTTPException(status_code=503, detail="OpenAI rejected the configured API key. Check the backend .env file.")
+    return HTTPException(status_code=502, detail=f"OpenAI could not {action}. Please try again.")
+
+
+@app.post("/interview/review-answer", response_model=schemas.InterviewAnswerReviewResponse)
+async def review_interview_answer(
+    payload: schemas.InterviewAnswerReviewRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = get_profile_or_404(db, current_user.id)
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="AI answer review needs OPENAI_API_KEY in the backend .env file.")
+
+    try:
+        from openai import OpenAI
+
+        system_prompt = (
+            "You are a rigorous but constructive interview answer coach. Evaluate only the answer text provided; "
+            "do not assume the candidate has experience or outcomes they did not state. If the answer is gibberish, "
+            "unrelated, or too incomplete to assess, set is_evaluable=false, overall_score=0, use empty scores and strengths, "
+            "and explain briefly in evaluation_note what is needed. Return valid JSON with keys is_evaluable (boolean), "
+            "evaluation_note (string), "
+            "overall_score (integer 0-100), scores (integer values for relevance, structure, evidence, clarity), "
+            "strengths (2 concise strings), improvements (2-3 concise strings), sample_answer (a short improved answer "
+            "using only facts from the candidate's answer; use bracketed placeholders for missing facts)."
+        )
+        user_prompt = json.dumps({
+            "target_role": payload.target_role,
+            "candidate_experience_level": profile.experience_level,
+            "question_type": payload.question_type,
+            "question": payload.question,
+            "answer": payload.answer,
+            "profile_skills": profile.skills or [],
+        }, ensure_ascii=True)
+
+        def _run_review_request() -> str:
+            client = OpenAI(api_key=api_key, timeout=35.0)
+            response = client.chat.completions.create(
+                model=_get_openai_chat_model(),
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format={"type": "json_object"},
+            )
+            return (response.choices[0].message.content or "").strip()
+
+        raw_review = await asyncio.to_thread(_run_review_request)
+        review = json.loads(raw_review)
+        scores = review.get("scores") or {}
+        return {
+            "is_evaluable": bool(review.get("is_evaluable", True)),
+            "evaluation_note": str(review.get("evaluation_note", "")),
+            "overall_score": max(0, min(100, int(review.get("overall_score", 0)))),
+            "scores": {key: max(0, min(100, int(scores.get(key, 0)))) for key in ("relevance", "structure", "evidence", "clarity")},
+            "strengths": [str(item) for item in review.get("strengths", [])[:3]],
+            "improvements": [str(item) for item in review.get("improvements", [])[:3]],
+            "sample_answer": str(review.get("sample_answer", "")),
+            "provider": "openai",
+            "model": _get_openai_chat_model(),
+        }
+    except Exception as exc:
+        logger.warning("AI interview review failed: %s", exc)
+        raise _interview_ai_http_error(exc, "review this answer") from exc
+
+@app.post("/interview/follow-up", response_model=schemas.InterviewFollowUpResponse)
+async def interview_follow_up(
+    payload: schemas.InterviewFollowUpRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = get_profile_or_404(db, current_user.id)
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="AI mock interviews need OPENAI_API_KEY in the backend .env file.")
+
+    system_prompt = (
+        "You are conducting a realistic, supportive interview. Ask exactly one concise follow-up question "
+        "that adapts to the candidate's last answer and tests role-relevant depth. For technical interviews, "
+        "probe their reasoning, implementation, trade-offs, or evidence. For HR interviews, ask for a specific "
+        "example, their own contribution, or reflection. Use the provided role and skills. Do not give away an "
+        "ideal answer, assume unstated experience, or ask a generic question. Return JSON with keys question "
+        "and interviewer_note (a brief neutral acknowledgement, no evaluation)."
+    )
+    user_prompt = json.dumps({
+        "role": payload.target_role,
+        "candidate_experience_level": profile.experience_level,
+        "candidate_skills": profile.skills or [],
+        "interview_type": payload.question_type,
+        "turn": payload.turn,
+        "previous_question": payload.question,
+        "candidate_answer": payload.answer,
+    }, ensure_ascii=True)
+
+    def _run_follow_up_request() -> str:
+        from openai import OpenAI
+
+        response = OpenAI(api_key=api_key, timeout=25.0).chat.completions.create(
+            model=_get_openai_chat_model(),
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            response_format={"type": "json_object"},
+        )
+        return (response.choices[0].message.content or "{}").strip()
+
+    try:
+        result = json.loads(await asyncio.to_thread(_run_follow_up_request))
+        question = str(result.get("question", "")).strip()
+        if not question:
+            raise ValueError("AI returned an empty follow-up question")
+        return {
+            "question": question[:1000],
+            "interviewer_note": str(result.get("interviewer_note", "Thank you. Let's explore that a little further."))[:300],
+            "provider": "openai",
+        }
+    except Exception as exc:
+        logger.warning("AI interview follow-up failed: %s", exc)
+        raise _interview_ai_http_error(exc, "generate a follow-up question") from exc
 
 
 @app.get("/interview/recordings", response_model=schemas.InterviewRecordingListResponse)
@@ -2232,6 +2427,112 @@ def delete_interview_recording(
         file_path.unlink(missing_ok=True)
 
     return {"detail": "Interview recording deleted."}
+
+
+@app.post("/interview/recordings/{recording_id}/review-audio", response_model=schemas.InterviewAudioReviewResponse)
+async def review_interview_recording_audio(
+    recording_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    recording = (
+        db.query(models.InterviewRecording)
+        .filter(
+            models.InterviewRecording.id == recording_id,
+            models.InterviewRecording.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not recording:
+        raise HTTPException(status_code=404, detail="Interview recording not found.")
+
+    audio_path = INTERVIEW_RECORDINGS_DIR / recording.stored_filename
+    if not audio_path.is_file():
+        raise HTTPException(status_code=404, detail="The saved audio file could not be found.")
+    try:
+        def _transcribe_recording() -> str:
+            model = _get_local_whisper_model()
+            segments, _info = model.transcribe(str(audio_path), vad_filter=True)
+            return " ".join(segment.text.strip() for segment in segments if segment.text.strip()).strip()
+
+        transcript = await asyncio.to_thread(_transcribe_recording)
+        if len(transcript) < 8:
+            raise HTTPException(status_code=422, detail="The recording did not contain enough clear speech to review. Try recording your answer again.")
+
+        profile = get_profile_or_404(db, current_user.id)
+        system_prompt = (
+            "You are an interview coach. Evaluate this candidate's spoken answer using only the transcript and supplied profile. "
+            "Score answer quality (relevance to question, evidence, reasoning) and communication (clear structure, concise wording, "
+            "fluency markers such as repeated filler words, and understandable phrasing). Do not infer vocal tone, confidence, "
+            "pronunciation, volume, or emotion because you only receive a transcript. Do not invent candidate facts. Give actionable, "
+            "specific feedback. Return valid JSON with integer scores 0-100: answer_score, communication_score, clarity, structure, "
+            "concision, fluency. Also return strengths (up to 3 short strings) and improvements (up to 3 short strings)."
+        )
+        user_prompt = json.dumps({
+            "target_role": recording.target_role,
+            "candidate_experience_level": profile.experience_level,
+            "profile_skills": profile.skills or [],
+            "question_type": recording.question_type,
+            "question": recording.question_text,
+            "spoken_answer_transcript": transcript,
+        }, ensure_ascii=True)
+
+        ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(180.0, connect=5.0)) as client:
+                response = await client.post(
+                    f"{ollama_url}/api/chat",
+                    json={
+                        "model": ollama_model,
+                        "stream": False,
+                        "format": "json",
+                        "options": {"temperature": 0.2},
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                    },
+                )
+                response.raise_for_status()
+                review_text = response.json().get("message", {}).get("content", "{}")
+        except httpx.ConnectError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="Could not connect to Ollama. Start the Ollama app and make sure the configured model is installed.",
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Ollama model '{ollama_model}' was not found. In a terminal, run: ollama run {ollama_model}",
+                ) from exc
+            raise HTTPException(status_code=502, detail="Ollama could not review this recording. Please try again.") from exc
+
+        review = json.loads(clean_json_response(review_text))
+        answer_score = max(0, min(100, int(review.get("answer_score", 0))))
+        communication_score = max(0, min(100, int(review.get("communication_score", 0))))
+        score_values = {
+            key: max(0, min(100, int((review.get("scores") or {}).get(key, 0))))
+            for key in ("clarity", "structure", "concision", "fluency")
+        }
+        return {
+            "transcript": transcript,
+            "overall_score": round((answer_score + communication_score) / 2),
+            "answer_score": answer_score,
+            "communication_score": communication_score,
+            "scores": score_values,
+            "strengths": [str(item) for item in review.get("strengths", [])[:3]],
+            "improvements": [str(item) for item in review.get("improvements", [])[:3]],
+            "provider": "ollama + faster-whisper",
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Interview audio review failed: %s", exc)
+        if isinstance(exc, HTTPException):
+            raise
+        raise HTTPException(status_code=502, detail="Could not transcribe and review this recording. Please try again.") from exc
 
 
 def clean_json_response(text: str) -> str:

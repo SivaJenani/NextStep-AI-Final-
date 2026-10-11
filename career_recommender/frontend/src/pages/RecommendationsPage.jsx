@@ -237,7 +237,7 @@ function JobCard({ job, onSave, savingId, onTailor, onFeedback, onDismiss }) {
         )}
       </section>
 
-      <div className="mt-4 rounded-xl border border-rose-100 bg-white/80 px-3 py-3">
+      <div className="recommendation-description mt-4 rounded-xl border border-rose-100 bg-white/80 px-3 py-3">
         <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           Description
         </p>
@@ -472,7 +472,7 @@ export default function RecommendationsPage() {
   return (
     <div className="mx-auto max-w-[1760px] space-y-4 font-sans">
       <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
-        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,0.9fr)] 2xl:items-end">
+        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,0.9fr)] 2xl:items-center">
           <div>
             <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
               Recommendations
@@ -513,15 +513,21 @@ export default function RecommendationsPage() {
             </label>
             <label>
               <span className="sr-only">Mode</span>
-              <select value={mode} onChange={(event) => setMode(event.target.value)} className="field-input rounded-xl text-base">
-                <option value="internship">Internship</option>
-                <option value="job">Job</option>
-              </select>
+              <span className="relative block">
+                <select value={mode} onChange={(event) => setMode(event.target.value)} className="field-input appearance-none rounded-xl pr-12 text-base">
+                  <option value="internship">Internship</option>
+                  <option value="job">Job</option>
+                </select>
+                <svg className="pointer-events-none absolute right-8 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="m2 4 4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
             </label>
             <button type="submit" className="primary-button rounded-xl px-5 py-3" disabled={loading}>
               {loading ? "Checking..." : "Refresh"}
             </button>
           </form>
+
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

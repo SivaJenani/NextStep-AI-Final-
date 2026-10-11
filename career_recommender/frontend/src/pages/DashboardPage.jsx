@@ -17,7 +17,6 @@ import RecentActivity from "../components/dashboard/RecentActivity";
 import AchievementBadges from "../components/dashboard/AchievementBadges";
 import DashboardFilters from "../components/dashboard/DashboardFilters";
 import ExportOptions from "../components/dashboard/ExportOptions";
-import Charts from "../components/dashboard/Charts";
 import ProgressTracker from "../components/dashboard/ProgressTracker";
 import JourneySnapshot from "../components/dashboard/JourneySnapshot";
 import { EmptyState } from "../components/dashboard/shared";
@@ -112,12 +111,23 @@ export default function DashboardPage({ view = "dashboard" }) {
     return (
       <div className="dashboard-page">
         {message && <div className="dashboard-message">{message}</div>}
+        <header className="dashboard-page-intro">
+          <div>
+            <span>SKILL GAP ANALYSIS</span>
+            <h1>Build the skills your target roles need</h1>
+            <p>See how your current strengths compare with the skills requested in matching listings.</p>
+          </div>
+          <div className="dashboard-listing-count">
+            <strong>{dashboard?.analyzed_listing_count || 0}</strong>
+            <span>matching listings analyzed</span>
+          </div>
+        </header>
         <div className="dashboard-top-actions">
           <DashboardFilters filters={filters} onChange={setFilters} onReset={profileFilters} model={model} skillGapOnly />
         </div>
         {dashboard ? (
           <>
-          <section className="dashboard-card dashboard-profile-context mb-4">
+          <section className="dashboard-card dashboard-profile-context dashboard-skill-gap-context mb-4">
             <div className="dashboard-section-heading compact">
               <span>Your profile context</span>
               <span className="dashboard-muted">Used for this analysis</span>
@@ -149,18 +159,17 @@ export default function DashboardPage({ view = "dashboard" }) {
               </div>
             </div>
           </section>
-          <p className="dashboard-card mb-4 text-sm leading-6 text-slate-600">
+          <p className="dashboard-card dashboard-skill-gap-note mb-4 text-sm leading-6 text-slate-600">
             This analysis uses your profile and {dashboard.analyzed_listing_count || 0} top matching job listings
             {profile?.desired_role ? ` for ${profile.desired_role}` : ""}
             {profile?.location ? ` in ${profile.location}` : ""}. Skill signal counts reflect this result set, not the whole job market.
           </p>
-          <div className="dashboard-main-grid">
+          <div className="dashboard-main-grid dashboard-skill-gap-grid">
             <div className="dashboard-main-column">
-              <SkillFamilies families={model.familyGaps} expandedFamilies={expandedFamilies} onToggleFamily={toggleFamily} onOpenSkill={setSkillDetail} />
-              <Charts model={model} />
+              <SkillFamilies families={model.familyGaps} expandedFamilies={expandedFamilies} skillEvidence={dashboard.skill_evidence} onToggleFamily={toggleFamily} onOpenSkill={setSkillDetail} />
             </div>
             <aside className="dashboard-side-column">
-              <QuickWinsPanel quickWins={model.quickWins} onOpenSkill={setSkillDetail} />
+              <QuickWinsPanel quickWins={model.quickWins} skillEvidence={dashboard.skill_evidence} onOpenSkill={setSkillDetail} />
               <LearningRecommendations model={model} />
             </aside>
           </div>

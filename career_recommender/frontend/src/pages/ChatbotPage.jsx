@@ -141,9 +141,9 @@ function ChatbotLayout() {
         
         {sidebarOpen && <Sidebar />}
 
-        <main className="flex min-h-0 flex-1 flex-col bg-slate-50 dark:bg-slate-900/50 relative border-l border-gray-100 dark:border-slate-800">
+        <main className="relative flex min-h-0 flex-1 flex-col border-l border-slate-200/70 bg-[radial-gradient(ellipse_at_top,rgba(219,234,254,0.32),transparent_44%),#f7f9fc] dark:border-slate-800 dark:bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.16),transparent_44%),#0f172a]">
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
             <div className="mx-auto max-w-4xl">
               {messages.length === 0 ? (
                 <div className="flex min-h-[500px] flex-col justify-center py-10">
@@ -164,7 +164,7 @@ function ChatbotLayout() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-8 pb-10">
+                <div className="mx-auto max-w-3xl space-y-6 pb-10">
                   <AnimatePresence initial={false}>
                     {messages.map((msg, i) => (
                       <motion.div 
@@ -173,13 +173,13 @@ function ChatbotLayout() {
                         animate={{ opacity: 1, y: 0 }}
                         className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                       >
-                        <div className={`flex gap-4 ${msg.role === "user" ? "max-w-[80%] flex-row-reverse" : "w-full"}`}>
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full overflow-hidden bg-gray-100 dark:bg-slate-800 shadow-sm">
+                        <div className={`flex gap-3 sm:gap-4 ${msg.role === "user" ? "max-w-[88%] flex-row-reverse sm:max-w-[78%]" : "w-full"}`}>
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
                             {msg.role === "user" ? (
                               profilePhoto ? (
                                 <img src={profilePhoto} alt="User" className="h-full w-full object-cover" />
                               ) : (
-                                <span className="bg-blue-600 text-white w-full h-full flex items-center justify-center font-bold text-sm">{initial}</span>
+                                <span className="flex h-full w-full items-center justify-center bg-blue-600 text-sm font-bold text-white">{initial}</span>
                               )
                             ) : (
                               <div className="flex h-full w-full items-center justify-center bg-blue-600 text-white">
@@ -190,14 +190,19 @@ function ChatbotLayout() {
                             )}
                           </div>
                           
-                          <div className={`min-w-0 px-6 py-4 ${
+                          <div className={`min-w-0 px-4 py-3.5 sm:px-5 sm:py-4 ${
                             msg.role === "user" 
-                              ? "rounded-[24px] rounded-tr-sm bg-blue-600 text-white shadow-md shadow-blue-600/20" 
-                              : "rounded-[24px] rounded-tl-sm border border-gray-100 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md shadow-sm"
+                              ? "rounded-[24px] rounded-tr-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-900/10" 
+                              : "rounded-[24px] rounded-tl-md border border-slate-200/80 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
                           }`}>
                             {msg.role === "assistant" && (
-                              <div className="mb-2">
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-blue-600">AI Career Mentor</span>
+                              <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700 dark:text-blue-300">
+                                  {msg.provider
+                                    ? `${msg.provider === "ollama" ? "Local AI" : "OpenAI"}${msg.model ? ` · ${msg.model}` : ""}`
+                                    : "Career Mentor"}
+                                </span>
                               </div>
                             )}
                             <MessageContent message={msg} />
@@ -258,10 +263,10 @@ function ChatbotLayout() {
             </div>
           </div>
 
-          <div className="bg-transparent px-4 pb-6 pt-2">
+          <div className="shrink-0 border-t border-slate-200/70 bg-white/75 px-4 pb-4 pt-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/75 sm:px-8 sm:pb-5">
             <ChatInput />
-            <p className="mt-4 text-center text-[11px] font-medium text-gray-400">
-              AI mentor can make mistakes. Use resume and job suggestions as guidance.
+            <p className="mt-2.5 text-center text-[11px] font-medium text-slate-400">
+              AI can make mistakes. Check important career decisions against trusted sources.
             </p>
           </div>
         </main>

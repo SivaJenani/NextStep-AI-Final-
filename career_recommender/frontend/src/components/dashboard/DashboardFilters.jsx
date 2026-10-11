@@ -34,7 +34,7 @@ export default function DashboardFilters({ filters, onChange, onReset, model, sk
       ];
 
   return (
-    <section className="dashboard-card dashboard-filter-card">
+    <section className={`dashboard-card dashboard-filter-card${skillGapOnly ? " dashboard-skill-gap-filter-card" : ""}`}>
       <div className="dashboard-section-heading compact">
         <span><Filter size={16} /> Dashboard Filters</span>
         <button type="button" onClick={() => onChange(onReset || DEFAULT_FILTERS)} className="dashboard-text-button">Reset</button>

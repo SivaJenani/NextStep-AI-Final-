@@ -76,9 +76,9 @@ export default function ChatInput() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto flex w-full max-w-4xl items-center gap-2 rounded-full border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-[5px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-shadow focus-within:shadow-[0_8px_30px_rgba(37,99,235,0.1)] dark:focus-within:shadow-[0_8px_30px_rgba(37,99,235,0.2)]"
+      className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_10px_35px_rgba(15,23,42,0.08)] transition-all focus-within:border-blue-300 focus-within:shadow-[0_12px_38px_rgba(37,99,235,0.14)] dark:border-slate-700 dark:bg-slate-800 dark:shadow-[0_10px_35px_rgba(0,0,0,0.22)] dark:focus-within:border-blue-800"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center pl-2 text-gray-400 dark:text-gray-500">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-500 dark:bg-blue-950/50 dark:text-blue-300">
         <Sparkles className="h-[18px] w-[18px]" />
       </div>
       
@@ -88,7 +88,7 @@ export default function ChatInput() {
         onChange={(e) => setInputText(e.target.value)}
         placeholder={isListening ? "Listening..." : "Ask anything..."}
         disabled={loading}
-        className={`flex-1 bg-transparent px-2 py-2 text-[14px] outline-none disabled:opacity-50 ${
+        className={`min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[15px] outline-none disabled:opacity-50 ${
           isListening ? "text-blue-600 dark:text-blue-400 placeholder:text-blue-400 dark:placeholder:text-blue-500" : "text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
         }`}
       />
@@ -98,7 +98,7 @@ export default function ChatInput() {
           type="button"
           onClick={toggleMute}
           disabled={loading}
-          className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
             isMuted
               ? "bg-orange-100 text-orange-500 hover:bg-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:hover:bg-orange-500/30"
               : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-400 dark:hover:bg-slate-600"
@@ -117,7 +117,7 @@ export default function ChatInput() {
         type="button"
         onClick={toggleListening}
         disabled={loading}
-        className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
           isListening 
             ? "bg-red-100 text-red-500 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 shadow-sm animate-pulse" 
             : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-400 dark:hover:bg-slate-600"
@@ -134,7 +134,7 @@ export default function ChatInput() {
       <button
         type="submit"
         disabled={!inputText.trim() || loading}
-        className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-600/20 transition-all duration-300 hover:scale-[1.05] hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-200 dark:disabled:bg-slate-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:shadow-none disabled:hover:scale-100"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-200 dark:disabled:bg-slate-700 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:shadow-none disabled:hover:translate-y-0"
         aria-label="Send message"
       >
         {loading ? (
