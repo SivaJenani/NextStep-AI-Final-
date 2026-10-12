@@ -1,3 +1,4 @@
+import "../styles/ui-preview.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -121,7 +122,7 @@ export default function AppShell({ children }) {
           </NavLink>
           <button
             type="button"
-            className="shell-sidebar-toggle hidden md:flex"
+            className="shell-sidebar-toggle hidden lg:flex"
             onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
             aria-label={isSidebarCollapsed ? "Open navigation" : "Close navigation"}
             aria-pressed={!isSidebarCollapsed}
@@ -135,7 +136,7 @@ export default function AppShell({ children }) {
           </button>
           <button 
             type="button" 
-            className="shell-mobile-close md:hidden p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+            className="shell-mobile-close lg:hidden p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <Menu className="h-6 w-6" />
@@ -211,7 +212,7 @@ export default function AppShell({ children }) {
           <div className="shell-topbar-left flex items-center gap-2">
             <button
               type="button"
-              className="md:hidden p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="lg:hidden p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors"
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open mobile menu"
             >
