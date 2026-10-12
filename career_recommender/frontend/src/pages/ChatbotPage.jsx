@@ -116,7 +116,7 @@ function ChatbotLayout() {
     messages, 
     loading, 
     error, 
-    sidebarOpen, 
+    sidebarOpen, setSidebarOpen, 
     suggestions,
     sendMessage,
     profilePhoto,
@@ -147,20 +147,23 @@ function ChatbotLayout() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="flex h-screen w-full flex-col bg-white dark:bg-slate-900 font-sans text-gray-900 dark:text-gray-100"
+      className="flex h-[100dvh] w-full flex-col bg-white dark:bg-slate-900 font-sans text-gray-900 dark:text-gray-100"
     >
       <Header />
-      <div className="flex h-full w-full overflow-hidden transition-[grid-template-columns] duration-300 ease-in-out">
+      <div className="relative flex min-h-0 min-w-0 flex-1 w-full overflow-hidden transition-[grid-template-columns] duration-300 ease-in-out">
         <input ref={resumeInputRef} type="file" accept="application/pdf" onChange={handleResumeUpload} className="sr-only" />
         
-        {sidebarOpen && <Sidebar />}
+        {sidebarOpen && <>
+          <button aria-label="Close chat navigation" onClick={() => setSidebarOpen(false)} className="fixed inset-x-0 bottom-0 top-20 z-20 bg-slate-950/40 backdrop-blur-sm lg:hidden" />
+          <div className="absolute inset-y-0 left-0 z-30 max-w-[85vw] lg:relative lg:z-auto lg:max-w-none"><Sidebar /></div>
+        </>}
 
-        <main className="relative flex min-h-0 flex-1 flex-col border-l border-slate-200/70 bg-[radial-gradient(ellipse_at_top,rgba(219,234,254,0.32),transparent_44%),#f7f9fc] dark:border-slate-800 dark:bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.16),transparent_44%),#0f172a]">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col border-l border-slate-200/70 bg-[radial-gradient(ellipse_at_top,rgba(219,234,254,0.32),transparent_44%),#f7f9fc] dark:border-slate-800 dark:bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.16),transparent_44%),#0f172a]">
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
             <div className="mx-auto max-w-4xl">
               {messages.length === 0 ? (
-                <div className="flex min-h-[500px] flex-col justify-center py-10">
+                <div className="flex min-h-[360px] flex-col justify-center py-4 sm:py-10">
                   <Hero />
                   <div className="mt-8">
                     <SuggestionGrid />
