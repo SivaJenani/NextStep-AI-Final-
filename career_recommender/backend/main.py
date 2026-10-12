@@ -34,6 +34,7 @@ from auth import (
 )
 from database import get_db, init_db
 from employer_api import router as employer_router
+from password_reset import router as password_reset_router
 from fraud_detector import analyze_job_posting
 from interview_module import generate_interview_pack
 from job_api import derive_company_trends, fetch_jobs, fetch_jobs_with_status
@@ -119,6 +120,7 @@ def startup_event():
 
 app.state.recommender = SemanticRecommender()
 
+app.include_router(password_reset_router)
 app.include_router(job_router)
 app.include_router(employer_router)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
