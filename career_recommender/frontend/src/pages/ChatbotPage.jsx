@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileDown, FileText } from "lucide-react";
 import client from "../api/client";
@@ -12,15 +13,28 @@ import Hero from "../components/chatbot/Hero";
 import SuggestionGrid from "../components/chatbot/SuggestionGrid";
 import ChatInput from "../components/chatbot/ChatInput";
 
+const BR_MARK = "\u2028";
+const prepMarkdown = (text) => (text || "").replace(/<br\s*\/?>/gi, BR_MARK);
+const withBreaks = (children) =>
+  (Array.isArray(children) ? children : [children]).flatMap((child, i) =>
+    typeof child === "string" && child.includes(BR_MARK)
+      ? child.split(BR_MARK).flatMap((part, j) => (j === 0 ? [part] : [<br key={`${i}-${j}`} />, part]))
+      : [child]
+  );
+
 const markdownComponents = {
+  table: ({ children }) => <div className="mb-4 overflow-x-auto"><table className="w-full border-collapse text-sm">{children}</table></div>,
+  thead: ({ children }) => <thead className="bg-gray-50 dark:bg-slate-800">{children}</thead>,
+  th: ({ children }) => <th className="border border-gray-200 dark:border-slate-700 px-3 py-2 text-left font-semibold text-gray-900 dark:text-gray-100">{withBreaks(children)}</th>,
+  td: ({ children }) => <td className="border border-gray-200 dark:border-slate-700 px-3 py-2 align-top text-gray-700 dark:text-gray-300">{withBreaks(children)}</td>,
   h1: ({ children }) => <h1 className="mb-3 mt-1 text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">{children}</h1>,
   h2: ({ children }) => <h2 className="mb-2 mt-5 border-b border-gray-100 dark:border-slate-700 pb-2 text-xl font-bold leading-tight text-gray-900 dark:text-gray-100 first:mt-0">{children}</h2>,
   h3: ({ children }) => <h3 className="mb-2 mt-4 text-lg font-semibold leading-tight text-gray-900 dark:text-gray-100">{children}</h3>,
-  p: ({ children }) => <p className="mb-3 leading-7 text-gray-700 dark:text-gray-300 last:mb-0">{children}</p>,
+  p: ({ children }) => <p className="mb-3 leading-7 text-gray-700 dark:text-gray-300 last:mb-0">{withBreaks(children)}</p>,
   strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-gray-100">{children}</strong>,
   ul: ({ children }) => <ul className="mb-4 list-disc space-y-2 pl-5 text-gray-700 dark:text-gray-300">{children}</ul>,
   ol: ({ children }) => <ol className="mb-4 list-decimal space-y-2 pl-5 text-gray-700 dark:text-gray-300">{children}</ol>,
-  li: ({ children }) => <li className="pl-1 leading-7 text-gray-700 dark:text-gray-300">{children}</li>,
+  li: ({ children }) => <li className="pl-1 leading-7 text-gray-700 dark:text-gray-300">{withBreaks(children)}</li>,
   code: ({ children }) => <code className="rounded-md bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 text-[13px] font-medium text-blue-600 dark:text-blue-400">{children}</code>,
   a: ({ children, href }) => <a className="font-semibold text-blue-600 dark:text-blue-400 underline-offset-4 hover:underline" href={href}>{children}</a>,
 };
@@ -57,7 +71,7 @@ function MessageContent({ message }) {
 
     return (
       <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-300">
-        {textBefore && <ReactMarkdown components={markdownComponents}>{textBefore}</ReactMarkdown>}
+        {textBefore && <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{prepMarkdown(textBefore)}</ReactMarkdown>}
         
         <div className="my-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 p-5 shadow-sm">
           <div className="flex items-start justify-between">
@@ -84,14 +98,14 @@ function MessageContent({ message }) {
           </div>
         </div>
 
-        {textAfter && <ReactMarkdown components={markdownComponents}>{textAfter}</ReactMarkdown>}
+        {textAfter && <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{prepMarkdown(textAfter)}</ReactMarkdown>}
       </div>
     );
   }
 
   return (
     <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-300">
-      <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{prepMarkdown(message.content)}</ReactMarkdown>
     </div>
   );
 }
