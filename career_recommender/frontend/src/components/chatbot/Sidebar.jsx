@@ -18,7 +18,7 @@ export default function Sidebar() {
     .filter(({ conv }) => (conv.preview || "Chat").toLowerCase().includes(historySearch.trim().toLowerCase()));
 
   return (
-    <aside className="flex h-full w-[320px] shrink-0 flex-col border-r border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[2px_0_12px_rgba(0,0,0,0.02)]">
+    <aside className="flex h-full w-[min(320px,85vw)] lg:w-[320px] shrink-0 flex-col border-r border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[2px_0_12px_rgba(0,0,0,0.02)]">
       <div className="flex flex-col space-y-5 p-6">
 
         {/* New Chat Button */}
