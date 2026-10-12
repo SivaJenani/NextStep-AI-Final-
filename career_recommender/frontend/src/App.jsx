@@ -13,6 +13,8 @@ import RecommendationsPage from "./pages/RecommendationsPage";
 import ResumeUploadPage from "./pages/ResumeUploadPage";
 import RoadmapPage from "./pages/RoadmapPage";
 import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 
 function AppShellRoutes() {
@@ -31,6 +33,8 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/admin/settings" element={<AdminSettingsPage />} />
       <Route
         path="/chatbot"
