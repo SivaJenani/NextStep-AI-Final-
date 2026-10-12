@@ -67,6 +67,9 @@ export default function LoginPage() {
         </div>
         {message && <p className="text-sm font-semibold text-rose-600">{message}</p>}
         <button type="submit" className="primary-button">Sign in</button>
+        <p className="text-sm">
+          <Link to="/forgot-password" className="font-semibold text-tide underline underline-offset-4">Forgot password?</Link>
+        </p>
       </form>
       <p className="mt-5 text-sm text-slate-600">
         New here? Use the{" "}
