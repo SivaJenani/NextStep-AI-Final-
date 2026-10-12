@@ -7,14 +7,14 @@ export default function Hero() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="flex flex-col items-center justify-center text-center pb-8 pt-4"
+      className="flex flex-col items-center justify-center text-center pb-4 sm:pb-8 pt-4"
     >
-      <div className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-blue-600/20 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 text-xs font-bold tracking-widest text-blue-600 dark:text-blue-400">
+      <div className="mb-4 sm:mb-6 inline-flex items-center gap-1.5 rounded-full border border-blue-600/20 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 text-xs font-bold tracking-widest text-blue-600 dark:text-blue-400">
         <Sparkles className="h-3.5 w-3.5" />
         AI CAREER MENTOR
       </div>
       
-      <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
+      <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl xl:text-5xl">
         What can I help<br />you with today?
       </h2>
       
