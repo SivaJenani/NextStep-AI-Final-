@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -15,6 +15,7 @@ export default function HomePage() {
   const auth = useAuth() || {};
   const { user } = auth;
   const location = useLocation();
+  const globeRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState("");
   const publicNavItems = [
@@ -67,8 +68,61 @@ export default function HomePage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    // Orange rotating globe behind the hero. Background stays transparent so the page's
+    // light/dark theme colour shows through; the effect is rebuilt when the theme flips.
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let effect = null;
+    let poll = null;
+    let stopPoll = null;
+    const destroy = () => {
+      if (effect) {
+        effect.destroy();
+        effect = null;
+      }
+    };
+    const build = () => {
+      destroy();
+      if (!globeRef.current || !window.VANTA?.GLOBE) return false;
+      const dark = document.documentElement.getAttribute("data-theme") === "dark";
+      effect = window.VANTA.GLOBE({
+        el: globeRef.current,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200,
+        minWidth: 200,
+        scale: 1,
+        scaleMobile: 1,
+        size: 0.9,
+        color: dark ? 0xff7a2e : 0xf2600f,
+        color2: dark ? 0xffb27a : 0xff9a52,
+        backgroundColor: dark ? 0x14110f : 0xffffff,
+        backgroundAlpha: 0,
+        showLines: false,
+        showDots: false,
+      });
+      return true;
+    };
+    if (!build()) {
+      poll = setInterval(() => {
+        if (build()) clearInterval(poll);
+      }, 200);
+      stopPoll = setTimeout(() => clearInterval(poll), 6000);
+    }
+    const observer = new MutationObserver(() => build());
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => {
+      observer.disconnect();
+      clearInterval(poll);
+      clearTimeout(stopPoll);
+      destroy();
+    };
+  }, []);
+
   return (
     <main className="home-page" style={{ position: "relative", minHeight: "100vh" }}>
+      <div ref={globeRef} className="home-globe" aria-hidden="true" />
       <div className="home-shell" style={{ position: "relative", zIndex: 1 }}>
         <header className="home-header" aria-label="Primary navigation">
           <div className="home-header-inner">
@@ -174,7 +228,7 @@ export default function HomePage() {
                 Discover real opportunities, understand exactly what skills are missing, and move from confusion to a focused action plan.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-4">
-                <Link to="/signup" className="home-cta-primary">
+                <Link to="/dashboard" className="home-cta-primary">
                   Launch your career workspace
                 </Link>
                 <Link to="/login" className="home-cta-secondary">
