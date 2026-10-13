@@ -31,7 +31,7 @@ function formatScore(value) {
 
 function StatCard({ label, value }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_20px_rgba(17,17,17,0.04)]">
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-extrabold text-slate-950">{value}</p>
     </div>
@@ -180,7 +180,7 @@ export default function BookmarkTrackerPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+      <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-[0_12px_28px_rgba(17,17,17,0.05)]">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_460px] xl:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-tide">
@@ -256,7 +256,7 @@ export default function BookmarkTrackerPage() {
             return (
               <article
                 key={bookmark.id}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.07)]"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(17,17,17,0.07)]"
               >
                 <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_380px]">
                   <div className="min-w-0 p-5 md:p-6">
@@ -364,7 +364,7 @@ export default function BookmarkTrackerPage() {
         </div>
 
         {!filteredBookmarks.length && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-[0_8px_22px_rgba(17,17,17,0.04)]">
             <p className="text-lg font-bold text-slate-950">
               {bookmarks.length ? "No jobs in this stage yet." : "No saved jobs yet."}
             </p>
