@@ -107,7 +107,7 @@ function QuickAction({ to, label, note }) {
   return (
     <NavLink
       to={to}
-      className="group rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:bg-blue-50/60 hover:shadow-[0_14px_28px_rgba(15,23,42,0.06)]"
+      className="group rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:bg-blue-50/60 hover:shadow-[0_14px_28px_rgba(17,17,17,0.06)]"
     >
       <span className="font-semibold text-slate-950 group-hover:text-blue-800">{label}</span>
       <span className="mt-2 block text-sm leading-6 text-slate-600">{note}</span>
@@ -156,7 +156,7 @@ function CustomSelect({ value, onChange, options, placeholder, className = "" })
       </div>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_10px_30px_rgba(15,23,42,0.1)]">
+        <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_10px_30px_rgba(17,17,17,0.1)]">
           {options.map((option) => (
             <div
               key={option.value}
@@ -219,7 +219,7 @@ function ComboBox({ value, onChange, options, placeholder, className = "", input
       </div>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_10px_30px_rgba(15,23,42,0.1)]">
+        <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_10px_30px_rgba(17,17,17,0.1)]">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option) => (
               <div
@@ -334,7 +334,7 @@ export default function ProfilePage() {
         position: "top-center",
         duration: 2500,
         style: {
-          background: "rgba(15, 23, 42, 0.8)",
+          background: "rgba(17, 17, 17, 0.8)",
           color: "#fff",
         },
       });
@@ -418,13 +418,13 @@ export default function ProfilePage() {
   return (
     <div className="profile-page space-y-6">
       {showSavedNotice && <div className="pointer-events-none fixed inset-0 z-[9998] bg-black/50" aria-hidden="true" />}
-      <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_45px_rgba(15,23,42,0.07)]">
+      <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_20px_45px_rgba(17,17,17,0.07)]">
         <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="p-6 sm:p-8">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">My Profile</p>
               <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
-                <label className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-3xl bg-slate-900 text-2xl font-bold text-white shadow-[0_18px_36px_rgba(15,23,42,0.18)]">
+                <label className="group relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-3xl bg-slate-900 text-2xl font-bold text-white shadow-[0_18px_36px_rgba(17,17,17,0.18)]">
                   {profilePhoto ? (
                     <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
                   ) : (
@@ -454,7 +454,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#ffffff)] p-6 sm:p-8 xl:border-l xl:border-t-0">
+          <div className="border-t border-slate-200 bg-[linear-gradient(180deg,#fafafa,#ffffff)] p-6 sm:p-8 xl:border-l xl:border-t-0">
             <div className="flex items-center gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Profile Completion</p>
@@ -476,13 +476,13 @@ export default function ProfilePage() {
                     </svg>
                   ) : (
                     <svg className="h-20 w-20 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e2e8f0" strokeWidth="12" />
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e5e5e5" strokeWidth="12" />
                       <circle
                         cx="50"
                         cy="50"
                         r="40"
                         fill="transparent"
-                        stroke="#3b82f6"
+                        stroke="#ff7a30"
                         strokeWidth="12"
                         strokeDasharray="251.2"
                         strokeDashoffset={251.2 - (251.2 * completion.score) / 100}
@@ -516,7 +516,7 @@ export default function ProfilePage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <form onSubmit={handleSubmit} className="rounded-[30px] border border-t-0 border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+        <form onSubmit={handleSubmit} className="rounded-[30px] border border-t-0 border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">Profile Details</p>
@@ -667,7 +667,7 @@ export default function ProfilePage() {
         </form>
 
         <div className="space-y-6">
-          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-blue-700">Skill Signals</p>
             <h3 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-slate-950">Current stack</h3>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -683,7 +683,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-coral">Next Actions</p>
             <div className="mt-4 grid gap-3">
               <QuickAction to="/resume" label="Build from resume" note="Extract skills, projects, and experience automatically." />
@@ -692,7 +692,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <section className="profile-match-preview rounded-[30px] border border-teal-200 bg-teal-50/60 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.04)]">
+          <section className="profile-match-preview rounded-[30px] border border-teal-200 bg-teal-50/60 p-6 shadow-[0_18px_40px_rgba(17,17,17,0.04)]">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-teal-700">Profile Match Preview</p>
             <h3 className="mt-3 text-xl font-bold text-slate-900">See what your profile matches today</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -726,7 +726,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-coral">Notifications</p>
         <h3 className="mt-3 text-2xl font-bold text-slate-900">Subscribe to matching job alerts</h3>
         <form onSubmit={handleSubscribe} className="mt-6 grid gap-4 md:grid-cols-[1fr_180px_auto]">
