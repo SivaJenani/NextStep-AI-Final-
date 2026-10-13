@@ -7393,3 +7393,12 @@ html[data-theme="dark"] #interview-overview > div { background: #1e1b19 !importa
 #interview-overview .sm\:grid-cols-3 > div { min-width: 0; padding-left: 0.75rem; padding-right: 0.75rem; }
 #interview-overview .sm\:grid-cols-3 > div > p:first-child { letter-spacing: 0.08em; font-size: 0.65rem; }
 html:not([data-theme="dark"]) .dashboard-profile-context-grid > div { background: #fff7f0; border-color: rgba(255,106,26,0.22); }
+
+/* New brand logo (orange arrow + navy bars): no recolour, light chip so navy stays readable in both themes */
+.home-logo-mark img, .home-hero-circle img, .shell-sidebar-brand img, img[src*="next-step-ai-logo"] { filter: none !important; }
+.home-logo-mark, .shell-logo-mark, .home-hero-circle, img[src*="next-step-ai-logo"].bg-night { background: #ffffff !important; }
+html[data-theme="dark"] .home-logo-mark, html[data-theme="dark"] .shell-logo-mark, html[data-theme="dark"] .home-hero-circle, html[data-theme="dark"] img[src*="next-step-ai-logo"].bg-night { background: #f6f1ea !important; }
+.home-logo-mark img, .shell-logo-mark img { width: 84% !important; height: 84% !important; object-fit: contain; }
+img[src*="next-step-ai-logo"].bg-night { padding: 3px; }
+.shell-logo-mark, .home-logo-mark { display: grid; place-items: center; border: 1px solid rgba(255,106,26,0.35); }
+.home-hero-circle img { width: 62% !important; height: 62% !important; }
