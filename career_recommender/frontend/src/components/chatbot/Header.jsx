@@ -9,7 +9,8 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-10 flex h-[80px] shrink-0 items-center justify-between bg-white/80 dark:bg-slate-900/80 px-6 backdrop-blur-md">
       <div className="flex items-center gap-3 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-sm">
-        <img src="/images/1-next-step-ai-logo.png" alt="Next Step AI Logo" className="h-10 w-10 object-contain rounded-full bg-night" />
+        <img src="/images/1-next-step-ai-logo.png" alt="Next Step AI Logo" className="chat-logo-light h-10 w-10 object-contain rounded-full bg-night" />
+        <img src="/images/3-next-step-ai-logo-dark.png" alt="Next Step AI Logo" className="chat-logo-dark h-10 w-10 object-contain" />
         <span className="text-[13px] font-black tracking-[0.15em] text-gray-900 dark:text-white uppercase pl-1 pr-3">
           NEXT STEP AI
         </span>
