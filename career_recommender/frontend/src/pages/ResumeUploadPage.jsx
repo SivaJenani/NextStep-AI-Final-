@@ -83,7 +83,7 @@ function RadialScoreGauge({ score, label, color = "blue", size = 120 }) {
   const strokeDashoffset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
 
   const colorMap = {
-    blue: { stroke: "#3b82f6", bg: "#eff6ff", text: "text-blue-600" },
+    blue: { stroke: "#ff7a30", bg: "#fff4ec", text: "text-blue-600" },
     emerald: { stroke: "#10b981", bg: "#ecfdf5", text: "text-emerald-600" },
     amber: { stroke: "#f59e0b", bg: "#fff7ed", text: "text-amber-600" },
     rose: { stroke: "#f43f5e", bg: "#fff1f2", text: "text-rose-600" },
@@ -100,7 +100,7 @@ function RadialScoreGauge({ score, label, color = "blue", size = 120 }) {
             cy="50"
             r="40"
             fill="transparent"
-            stroke="#f1f5f9"
+            stroke="#f5f5f5"
             strokeWidth="8"
           />
           <circle
@@ -151,7 +151,7 @@ function KPIScoreCard({ title, score, suffix = "", status, description, color = 
 
   return (
     <motion.div
-      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(15,23,42,0.06)" }}
+      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(17, 17, 17,0.06)" }}
       className={`rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 ${borderColors[color]}`}
     >
       <div className="flex items-start justify-between">
@@ -183,7 +183,7 @@ function KPIScoreCard({ title, score, suffix = "", status, description, color = 
 }
 
 function AtsScoreCelebration({ score, onDismiss }) {
-  const colors = ["#60a5fa", "#f472b6", "#facc15", "#34d399", "#a78bfa", "#fb923c"];
+  const colors = ["#ff8a4c", "#f472b6", "#facc15", "#34d399", "#a78bfa", "#fb923c"];
   return (
     <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden print:hidden" aria-hidden="false">
       {Array.from({ length: 52 }, (_, index) => (
@@ -243,7 +243,7 @@ export default function ResumeUploadPage() {
   const [editedResumeText, setEditedResumeText] = useState("");
   const [editedResumeLines, setEditedResumeLines] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("professional");
-  const [accentColor, setAccentColor] = useState("#2563eb");
+  const [accentColor, setAccentColor] = useState("#ff6a1a");
   const [fontStyle, setFontStyle] = useState("sans");
   const [fontSize, setFontSize] = useState("medium");
   const [lineSpacing, setLineSpacing] = useState("normal");
@@ -2557,11 +2557,11 @@ export default function ResumeUploadPage() {
                         setAccentColor(val);
                       }
                     }}
-                    placeholder="#2563eb"
+                    placeholder="#ff6a1a"
                     className="field-input text-xs w-28 uppercase font-mono"
                   />
                   <div className="flex flex-wrap gap-1.5 ml-1">
-                    {["#0f172a", "#2563eb", "#0d9488", "#4f46e5", "#059669", "#be123c"].map(c => (
+                    {["#111111", "#ff6a1a", "#0d9488", "#ea580c", "#059669", "#be123c"].map(c => (
                       <button
                         key={c}
                         type="button"
@@ -2731,7 +2731,7 @@ export default function ResumeUploadPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setAccentColor("#2563eb");
+                      setAccentColor("#ff6a1a");
                       setFontStyle("sans");
                       setFontSize("medium");
                       setLineSpacing("normal");
@@ -3068,7 +3068,7 @@ export default function ResumeUploadPage() {
               <CardWrapper
                 key={action.title}
                 {...wrapperProps}
-                className="group p-5 text-left rounded-3xl border border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:shadow-[0_15px_30px_rgba(59,130,246,0.06)] transition-all duration-300 flex items-start gap-4 w-full"
+                className="group p-5 text-left rounded-3xl border border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:shadow-[0_15px_30px_rgba(255,122,48,0.06)] transition-all duration-300 flex items-start gap-4 w-full"
               >
                 <div className="rounded-2xl bg-blue-50 text-blue-600 p-3 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
                   <action.icon className="h-5 w-5" />
