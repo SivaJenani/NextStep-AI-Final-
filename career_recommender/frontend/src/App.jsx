@@ -49,25 +49,25 @@ export default function App() {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute>
+            <ExploreRoute title="Profile" description="Your saved profile, photo and preferences." variant="login">
               <ProfilePage />
-            </ProtectedRoute>
+            </ExploreRoute>
           }
         />
         <Route
           path="/resume"
           element={
-            <ProtectedRoute>
+            <ExploreRoute title="Resume" description="Upload your resume to get an audit, skill gaps and matched jobs." variant="upload">
               <ResumeUploadPage />
-            </ProtectedRoute>
+            </ExploreRoute>
           }
         />
         <Route
           path="/apply/:jobId"
           element={
-            <ProtectedRoute>
+            <ExploreRoute title="Apply" description="Apply to this job with your saved details." variant="login">
               <ApplyJob />
-            </ProtectedRoute>
+            </ExploreRoute>
           }
         />
         <Route
@@ -113,9 +113,9 @@ export default function App() {
         <Route
           path="/bookmarks"
           element={
-            <ProtectedRoute>
+            <ExploreRoute title="Bookmarks" description="Jobs you saved and your application tracker." variant="login">
               <BookmarkTrackerPage />
-            </ProtectedRoute>
+            </ExploreRoute>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
