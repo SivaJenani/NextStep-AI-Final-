@@ -113,7 +113,7 @@ export default function AppShell({ children }) {
         <div className="shell-sidebar-brand-row">
           <NavLink to="/" className="shell-sidebar-brand" title={isSidebarCollapsed ? "Next Step AI" : undefined}>
             <span className="shell-logo-mark" aria-hidden="true">
-              <img src="/images/next-step-ai-logo.png" alt="" />
+              <img src="/images/1-next-step-ai-logo.png" alt="" />
             </span>
             <span className="shell-sidebar-brand-copy">
               <span className="shell-brand-kicker">Next Step AI</span>
