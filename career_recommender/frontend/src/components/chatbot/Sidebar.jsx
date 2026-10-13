@@ -24,7 +24,7 @@ export default function Sidebar() {
         {/* New Chat Button */}
         <button
           onClick={newChat}
-          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[18px] bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-[length:200%_auto] px-4 py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_-4px_rgba(79,70,229,0.5)] transition-all duration-500 hover:scale-[1.02] hover:bg-[right_center] hover:shadow-[0_8px_25px_-5px_rgba(79,70,229,0.6)] active:scale-[0.98]"
+          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[18px] bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-[length:200%_auto] px-4 py-3.5 text-sm font-bold text-white shadow-[0_4px_20px_-4px_rgba(255,106,26,0.45)] transition-all duration-500 hover:scale-[1.02] hover:bg-[right_center] hover:shadow-[0_8px_25px_-5px_rgba(255,106,26,0.55)] active:scale-[0.98]"
         >
           <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           <Plus className="relative z-10 h-5 w-5 transition-transform duration-500 group-hover:rotate-90" strokeWidth={2.5} />
