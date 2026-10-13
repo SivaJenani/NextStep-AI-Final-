@@ -260,7 +260,7 @@ function LearningResourceVideoModal({ resource, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm print:hidden">
-      <div className="w-full max-w-4xl rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)]">
+      <div className="w-full max-w-4xl rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(17,17,17,0.35)]">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested video</p>
@@ -375,7 +375,7 @@ function LearningResourceList({ items, onOpenVideo, stepId, learningProgress = {
         return (
           <div
             key={`resource-${index}-${normalized.title}`}
-            className="group rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.95))] px-5 py-4 text-sm text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:shadow-[0_18px_35px_rgba(15,23,42,0.08)] print:text-xs"
+            className="group rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.95))] px-5 py-4 text-sm text-slate-700 shadow-[0_12px_28px_rgba(17,17,17,0.05)] transition hover:border-slate-300 hover:shadow-[0_18px_35px_rgba(17,17,17,0.08)] print:text-xs"
           >
             <div>
               <div className="flex items-start justify-between gap-3">
@@ -525,7 +525,7 @@ function ProgressRing({ progress, size = 48 }) {
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg className="-rotate-90" width={size} height={size}>
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#e2e8f0" strokeWidth="4" fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#e5e5e5" strokeWidth="4" fill="none" />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -565,8 +565,8 @@ const CustomStepDot = (props) => {
     );
   }
   if (isInProgress) {
-    const dotColor = payload.isWeeklyGoal ? "#d97706" : "#3b82f6";
-    const glowColor = payload.isWeeklyGoal ? "rgba(217, 119, 6, 0.5)" : "rgba(59, 130, 246, 0.5)";
+    const dotColor = payload.isWeeklyGoal ? "#d97706" : "#ff7a30";
+    const glowColor = payload.isWeeklyGoal ? "rgba(217, 119, 6, 0.5)" : "rgba(255, 122, 48, 0.5)";
     return (
       <g key={`step-dot-${payload.name}`} className="cursor-pointer">
         <circle cx={cx} cy={cy} r={8} fill={dotColor} stroke="#ffffff" strokeWidth={2} style={{ filter: `drop-shadow(0 0 5px ${glowColor})` }} />
@@ -575,7 +575,7 @@ const CustomStepDot = (props) => {
     );
   }
   return (
-    <circle key={`step-dot-${payload.name}`} cx={cx} cy={cy} r={5} fill="#cbd5e1" stroke="#ffffff" strokeWidth={1.5} className="cursor-pointer" />
+    <circle key={`step-dot-${payload.name}`} cx={cx} cy={cy} r={5} fill="#d4d4d4" stroke="#ffffff" strokeWidth={1.5} className="cursor-pointer" />
   );
 };
 
@@ -838,18 +838,18 @@ export default function RoadmapTimeline({
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" vertical={false} />
                   <XAxis 
                     dataKey="name" 
                     tickLine={false} 
                     axisLine={false} 
-                    tick={{ fill: "#475569", fontSize: 10.5, fontWeight: 700 }} 
+                    tick={{ fill: "#525252", fontSize: 10.5, fontWeight: 700 }} 
                   />
                   <YAxis 
                     domain={[0, 100]} 
                     tickLine={false} 
                     axisLine={false} 
-                    tick={{ fill: "#94a3b8", fontSize: 10 }} 
+                    tick={{ fill: "#a3a3a3", fontSize: 10 }} 
                     unit="%"
                   />
                   <Tooltip 
@@ -955,7 +955,7 @@ export default function RoadmapTimeline({
                 className={`relative overflow-hidden rounded-[30px] border p-6 transition duration-300 ${
                   isDone
                     ? "border-emerald-200 bg-white shadow-[0_18px_40px_rgba(16,185,129,0.08)]"
-                    : "border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]"
+                    : "border-slate-200 bg-white shadow-[0_18px_45px_rgba(17,17,17,0.06)]"
                 }`}
               >
                 <div
@@ -1069,7 +1069,7 @@ export default function RoadmapTimeline({
                       />
                     </div>
 
-                    <div className="w-full rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(248,250,252,0.9))] px-5 py-4 xl:max-w-[240px]">
+                    <div className="w-full rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,rgba(17, 17, 17,0.04),rgba(248,250,252,0.9))] px-5 py-4 xl:max-w-[240px]">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Estimated Salary</p>
                       <p className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950">{step.salary_range}</p>
                     </div>
@@ -1449,4 +1449,4 @@ function ProjectItemEditor({ project, projId, pidx, pdata, onUpdateProject, onAn
       )}
     </div>
   );
-}
+                  }
