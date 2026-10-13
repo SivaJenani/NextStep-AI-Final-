@@ -73,7 +73,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <ExploreRoute title="Dashboard" description="See your skills, readiness and progress in one place.">
+            <ExploreRoute guestLayout title="Dashboard" description="See your skills, readiness and progress in one place.">
               <DashboardPage />
             </ExploreRoute>
           }
