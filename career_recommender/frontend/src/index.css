@@ -7384,3 +7384,12 @@ html[data-theme="dark"] h1.home-title { color: #f3efea !important; }
 html[data-theme="dark"] h1.home-title .home-accent { color: #ff6a1a !important; }
 html[data-theme="dark"] p.home-lead { color: #c9c1b8 !important; }
 html[data-theme="dark"] .home-hero-circle img { filter: hue-rotate(165deg) saturate(1.25) brightness(1.1) !important; }
+
+/* dark: skill-gap profile context tiles, interview hero */
+html[data-theme="dark"] .dashboard-profile-context-grid > div { background: #272320 !important; border-color: rgba(255,106,26,0.18) !important; }
+html[data-theme="dark"] .dashboard-profile-context-grid small { color: #a89f95 !important; }
+html[data-theme="dark"] .dashboard-profile-context-grid strong { color: #f3efea !important; }
+html[data-theme="dark"] #interview-overview > div { background: #1e1b19 !important; }
+#interview-overview .sm\:grid-cols-3 > div { min-width: 0; padding-left: 0.75rem; padding-right: 0.75rem; }
+#interview-overview .sm\:grid-cols-3 > div > p:first-child { letter-spacing: 0.08em; font-size: 0.65rem; }
+html:not([data-theme="dark"]) .dashboard-profile-context-grid > div { background: #fff7f0; border-color: rgba(255,106,26,0.22); }
