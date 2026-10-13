@@ -1,15 +1,32 @@
 /** @type {import('tailwindcss').Config} */
+import colors from "tailwindcss/colors";
+
+const brandOrange = {
+  50: "#fff4ec", 100: "#ffe8d9", 200: "#ffd0b0", 300: "#ffb48a", 400: "#ff8a4c",
+  500: "#ff6a1a", 600: "#ea580c", 700: "#c2410c", 800: "#9a3412", 900: "#7c2d12", 950: "#431407",
+};
+
 export default {
   darkMode: 'class',
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#111827",
-        mist: "#f3f7f6",
-        tide: "#0f766e",
-        coral: "#fb923c",
-        night: "#082f49",
+        slate: colors.neutral,
+        gray: colors.neutral,
+        zinc: colors.neutral,
+        blue: brandOrange,
+        indigo: brandOrange,
+        cyan: brandOrange,
+        sky: brandOrange,
+        teal: brandOrange,
+        violet: brandOrange,
+        purple: brandOrange,
+        ink: "#111111",
+        mist: "#f6f6f6",
+        tide: "#ea580c",
+        coral: "#ff6a1a",
+        night: "#111111",
       },
       fontFamily: {
         sans: ["'Inter'", "system-ui", "sans-serif"],
