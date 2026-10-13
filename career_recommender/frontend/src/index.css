@@ -7371,3 +7371,5 @@ html[data-theme="dark"] .shell-logo-mark { background: rgba(255,106,26,0.18) !im
   header.sticky.top-0.z-10 > div:last-child { gap: 0.5rem; }
   header.sticky.top-0.z-10 > div:last-child a { padding: 0 0.75rem; }
 }
+html[data-theme="dark"] .bg-slate-950, html[data-theme="dark"] .bg-slate-900.text-white:not(aside):not(main) { background-color: #ff6a1a !important; border-color: #ff6a1a !important; color: #ffffff !important; }
+html[data-theme="dark"] .border-slate-950 { border-color: #ff6a1a !important; }
