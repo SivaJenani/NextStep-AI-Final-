@@ -166,7 +166,7 @@ export default function CareerRoadmap({ originalSkills = [], missingSkills = [],
         minZoom={0.65}
         maxZoom={2}
       >
-        <Background color="#cbd5e1" gap={16} />
+        <Background color="#d4d4d4" gap={16} />
         <Controls />
       </ReactFlow>
       </div>
