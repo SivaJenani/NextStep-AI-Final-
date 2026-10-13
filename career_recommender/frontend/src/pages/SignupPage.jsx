@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import client, { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { validateRealEmail } from "../utils/authValidation";
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const afterLogin = location.state?.from || "/dashboard";
   const { login } = useAuth();
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
   const [currentPassword, setCurrentPassword] = useState("");
@@ -49,7 +51,7 @@ export default function SignupPage() {
     try {
       const { data } = await client.post("/auth/signup", form);
       login(data);
-      navigate("/dashboard");
+      navigate(afterLogin);
     } catch (error) {
       const detail = getApiErrorMessage(error, "Unable to create account.");
       setShowReplaceFlow(detail === "Email already registered.");
@@ -88,7 +90,7 @@ export default function SignupPage() {
         new_password: form.password,
       });
       login(data);
-      navigate("/dashboard");
+      navigate(afterLogin);
     } catch (error) {
       setMessage(getApiErrorMessage(error, "Unable to replace account."));
     }
