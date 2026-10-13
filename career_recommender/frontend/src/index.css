@@ -7363,3 +7363,11 @@ html[data-theme="dark"] a.home-nav-link:hover, html[data-theme="dark"] a.home-na
 html[data-theme="dark"] .home-nav-links { background: #1e1b19 !important; border-color: #35302b !important; }
 html[data-theme="dark"] .theme-toggle-compact, html[data-theme="dark"] .theme-toggle-compact.is-dark { background: #272320 !important; border-color: #35302b !important; color: #ff8a4c !important; }
 html[data-theme="dark"] .shell-logo-mark { background: rgba(255,106,26,0.18) !important; }
+
+@media (max-width: 640px) {
+  header.sticky.top-0.z-10 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  header.sticky.top-0.z-10 > div:first-child span.uppercase { display: none; }
+  header.sticky.top-0.z-10 > div:first-child { gap: 0.5rem; }
+  header.sticky.top-0.z-10 > div:last-child { gap: 0.5rem; }
+  header.sticky.top-0.z-10 > div:last-child a { padding: 0 0.75rem; }
+}
