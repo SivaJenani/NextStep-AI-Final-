@@ -74,7 +74,7 @@ export default function HomePage() {
           <div className="home-header-inner">
             <Link to="/" className="home-brand-link" onClick={closeMenu}>
               <span className="home-logo-mark">
-                <img src="/images/next-step-ai-logo.png" alt="" />
+                <img src="/images/1-next-step-ai-logo.png" alt="" />
               </span>
               <span>
                 <span className="home-brand-title">Next Step AI</span>
@@ -184,7 +184,7 @@ export default function HomePage() {
             </div>
             <div className="home-hero-art" aria-hidden="true">
               <div className="home-hero-circle">
-                <img src="/images/next-step-ai-logo.png" alt="" />
+                <img src="/images/1-next-step-ai-logo.png" alt="" />
               </div>
               <Link to="/signup" className="home-hero-badge" tabIndex={-1}>
                 <span>Start here</span>
