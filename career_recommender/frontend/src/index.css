@@ -7274,3 +7274,19 @@ img[src="/images/auth-people.png"] {
   text-decoration: none !important;
 }
 .shell-sidebar .shell-login-link:hover { background: #ff6a1a !important; }
+
+/* Mobile fixes: chat sidebar overlays instead of squeezing the chat, profile never overflows */
+@media (max-width: 767px) {
+  aside.w-\[320px\] {
+    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.18);
+    left: 0;
+    position: fixed;
+    top: 4.5rem;
+    bottom: 0;
+    width: min(300px, 86vw);
+    z-index: 60;
+  }
+  .profile-page { max-width: 100%; overflow-x: hidden; }
+  .profile-page .grid > * { min-width: 0; }
+  .profile-page section { max-width: 100%; }
+}
