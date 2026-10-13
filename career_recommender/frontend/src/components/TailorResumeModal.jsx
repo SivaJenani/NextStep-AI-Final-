@@ -290,7 +290,7 @@ export default function TailorResumeModal({ job, onClose }) {
               <div className="space-y-2">
                 <h4 className="text-xl font-bold text-slate-950">Resume Required</h4>
                 <p className="text-sm leading-6 text-slate-600">
-                  We couldn't find a resume attached to your profile. Please upload a PDF resume first so the AI can extract your background and tailor it to this job description.
+                  We couldn't find a resume on your profile. Add your resume on the Resume page first so the AI can tailor it to this job description.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -305,7 +305,7 @@ export default function TailorResumeModal({ job, onClose }) {
                   to="/resume"
                   className="primary-button rounded-xl px-5 py-2.5 inline-flex items-center gap-1.5"
                 >
-                  Upload Resume
+                  Go to Resume page
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
