@@ -155,7 +155,7 @@ export default function DashboardPage({ view = "dashboard" }) {
               <div>
                 {(profile?.skills || []).length ? profile.skills.slice(0, 12).map((skill) => (
                   <span key={skill} className="dashboard-chip dashboard-gene-matched">{skill}</span>
-                )) : <span className="dashboard-muted">Add skills or upload a resume to improve this analysis.</span>}
+                )) : <span className="dashboard-muted">Add skills to improve this analysis.</span>}
               </div>
             </div>
           </section>
