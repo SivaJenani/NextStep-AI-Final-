@@ -250,7 +250,7 @@ export default function Charts({ model }) {
       {!hasVisualizationData ? (
         <EmptyState
           title="Analytics are waiting for more data"
-          message="Upload a resume or refresh role recommendations to populate skill family, demand, and learning progress visualizations."
+          message="Refresh role recommendations to populate skill family, demand, and learning progress visualizations."
         />
       ) : null}
 
