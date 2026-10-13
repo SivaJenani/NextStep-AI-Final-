@@ -59,7 +59,7 @@ export default function GapBarChart({ data }) {
           return (
             <div
               key={row.skill}
-              className="grid gap-4 rounded-3xl border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)] lg:grid-cols-[180px_minmax(0,1fr)_110px] lg:items-center"
+              className="grid gap-4 rounded-3xl border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-[0_12px_30px_rgba(17,17,17,0.05)] lg:grid-cols-[180px_minmax(0,1fr)_110px] lg:items-center"
             >
               <div>
                 <p className="text-xl font-semibold capitalize tracking-[-0.02em] text-slate-800">{row.skill}</p>
