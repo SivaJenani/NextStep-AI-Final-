@@ -45,7 +45,7 @@ export default function AppShell({ children }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState("");
   const profileRef = useRef(null);
-  const navItems = user ? privateNavItems : publicNavItems;
+  const navItems = privateNavItems;
   const shellWidthClass = user ? "mx-auto w-full max-w-none px-3 sm:px-5 lg:px-6 pb-2" : "mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-6 pb-2";
   const displayName = user?.full_name || user?.email?.split("@")[0] || "Guest";
   const initials = displayName
