@@ -93,7 +93,7 @@ function MessageContent({ message }) {
             </button>
           </div>
           <div className="mt-4 max-h-32 overflow-hidden relative">
-             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-50 dark:to-[#172033] z-10" />
+             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-50 dark:to-[#1f1f1f] z-10" />
              <p className="text-xs text-gray-400 dark:text-gray-500 font-mono whitespace-pre-wrap">{docContent}</p>
           </div>
         </div>
@@ -155,7 +155,7 @@ function ChatbotLayout() {
         
         {sidebarOpen && <Sidebar />}
 
-        <main className="relative flex min-h-0 flex-1 flex-col border-l border-slate-200/70 bg-[radial-gradient(ellipse_at_top,rgba(219,234,254,0.32),transparent_44%),#f7f9fc] dark:border-slate-800 dark:bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.16),transparent_44%),#0f172a]">
+        <main className="relative flex min-h-0 flex-1 flex-col border-l border-slate-200/70 bg-[radial-gradient(ellipse_at_top,rgba(219,234,254,0.32),transparent_44%),#f7f9fc] dark:border-slate-800 dark:bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.16),transparent_44%),#111111]">
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
             <div className="mx-auto max-w-4xl">
