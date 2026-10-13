@@ -76,7 +76,7 @@ export default function ChatInput() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_10px_35px_rgba(15,23,42,0.08)] transition-all focus-within:border-blue-300 focus-within:shadow-[0_12px_38px_rgba(37,99,235,0.14)] dark:border-slate-700 dark:bg-slate-800 dark:shadow-[0_10px_35px_rgba(0,0,0,0.22)] dark:focus-within:border-blue-800"
+      className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_10px_35px_rgba(17,17,17,0.08)] transition-all focus-within:border-blue-300 focus-within:shadow-[0_12px_38px_rgba(255,106,26,0.14)] dark:border-slate-700 dark:bg-slate-800 dark:shadow-[0_10px_35px_rgba(0,0,0,0.22)] dark:focus-within:border-blue-800"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-500 dark:bg-blue-950/50 dark:text-blue-300">
         <Sparkles className="h-[18px] w-[18px]" />
