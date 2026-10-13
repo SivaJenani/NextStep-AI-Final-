@@ -83,7 +83,7 @@ function OverallMissingSkillsPanel({ skills, limit = 6 }) {
   const visibleSkills = skills.slice(0, limit);
 
   return (
-    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
+    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] lg:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-rose-600">
@@ -119,7 +119,7 @@ function SkillCloudPanel({ title, tone = "green", skills = [] }) {
       : "text-blue-700 bg-blue-100";
 
   return (
-    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
       <p
         className={`font-mono text-xs font-bold uppercase tracking-[0.25em] ${
           tone === "green" ? "text-emerald-700" : "text-blue-700"
@@ -167,7 +167,7 @@ function JobCard({ job, onSave, savingId, onTailor, onFeedback, onDismiss }) {
   const jobId = job.external_job_id || job.job_id || `${job.company_name}-${job.job_title}`;
 
   return (
-    <article className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
+    <article className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] lg:p-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h3 className="font-display text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-3xl">{job.job_title}</h3>
@@ -471,7 +471,7 @@ export default function RecommendationsPage() {
 
   return (
     <div className="mx-auto max-w-[1760px] space-y-4 font-sans">
-      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
+      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] lg:p-8">
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,0.9fr)] 2xl:items-center">
           <div>
             <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
@@ -601,7 +601,7 @@ export default function RecommendationsPage() {
                 skillBasedRecommendations.map((rec, rIdx) => (
                   <div
                     key={`${rec.role}-${rIdx}`}
-                    className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8 space-y-6"
+                    className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] lg:p-8 space-y-6"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
@@ -719,7 +719,7 @@ export default function RecommendationsPage() {
         </section>
 
         <aside className="space-y-6 2xl:sticky 2xl:top-4 2xl:self-start">
-          <section className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <section className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
