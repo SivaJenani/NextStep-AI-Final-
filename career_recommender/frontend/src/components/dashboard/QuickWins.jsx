@@ -26,7 +26,7 @@ export default function QuickWinsPanel({ quickWins, skillEvidence, onOpenSkill }
             </article>
           );
         }) : (
-          <EmptyState title="No quick wins yet" message="Add more profile skills or upload a resume to unlock faster learning suggestions." />
+          <EmptyState title="No quick wins yet" message="Add more profile skills to unlock faster learning suggestions." />
         )}
       </div>
     </section>
