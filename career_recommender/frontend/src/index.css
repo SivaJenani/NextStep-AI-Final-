@@ -7402,3 +7402,4 @@ html[data-theme="dark"] .home-logo-mark, html[data-theme="dark"] .shell-logo-mar
 img[src*="next-step-ai-logo"].bg-night { padding: 3px; }
 .shell-logo-mark, .home-logo-mark { display: grid; place-items: center; border: 1px solid rgba(255,106,26,0.35); }
 .home-hero-circle img { width: 62% !important; height: 62% !important; }
+html[data-theme="dark"] .home-hero-circle img { filter: none !important; }
