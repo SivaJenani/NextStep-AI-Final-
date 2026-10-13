@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import client, { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { validateRealEmail } from "../utils/authValidation";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const afterLogin = location.state?.from || "/dashboard";
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
@@ -27,7 +29,7 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
       login(data);
-      navigate("/dashboard");
+      navigate(afterLogin);
     } catch (error) {
       setMessage(getApiErrorMessage(error, "Unable to login."));
     }
