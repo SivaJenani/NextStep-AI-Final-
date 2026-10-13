@@ -260,18 +260,18 @@ export default function Charts({ model }) {
             <RadarChart data={visualFamilies} cx="50%" cy="52%" outerRadius="86%" margin={{ top: 22, right: 18, bottom: 24, left: 18 }}>
               <defs>
                 <radialGradient id="currentGlow" cx="50%" cy="50%" r="80%">
-                  <stop offset="0%" stopColor="#2563eb" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.0} />
+                  <stop offset="0%" stopColor="#ff6a1a" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="#ea580c" stopOpacity={0.0} />
                 </radialGradient>
                 <radialGradient id="expectedGlow" cx="50%" cy="50%" r="80%">
                   <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
                   <stop offset="100%" stopColor="#d97706" stopOpacity={0.0} />
                 </radialGradient>
               </defs>
-              <PolarGrid stroke="#cbd5e1" strokeWidth={0.8} />
-              <PolarAngleAxis dataKey="family" tick={{ fill: "#1e293b", fontSize: 10.5, fontWeight: 700 }} />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 9 }} stroke="rgba(203, 213, 225, 0.4)" />
-              <Radar name="Current" dataKey="current" stroke="#2563eb" strokeWidth={2} fill="url(#currentGlow)" fillOpacity={1} isAnimationActive animationDuration={950} />
+              <PolarGrid stroke="#d4d4d4" strokeWidth={0.8} />
+              <PolarAngleAxis dataKey="family" tick={{ fill: "#262626", fontSize: 10.5, fontWeight: 700 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "#737373", fontSize: 9 }} stroke="rgba(203, 213, 225, 0.4)" />
+              <Radar name="Current" dataKey="current" stroke="#ff6a1a" strokeWidth={2} fill="url(#currentGlow)" fillOpacity={1} isAnimationActive animationDuration={950} />
               <Radar name="Expected" dataKey="expected" stroke="#f59e0b" strokeWidth={1.5} fill="url(#expectedGlow)" fillOpacity={1} isAnimationActive animationDuration={950} strokeDasharray="3 3" />
               <Legend verticalAlign="bottom" height={24} iconType="circle" />
               <Tooltip content={<SkillRadarTooltip />} />
@@ -306,18 +306,18 @@ export default function Charts({ model }) {
             <BarChart data={demandData} layout="vertical" margin={{ top: 4, right: 86, bottom: 2, left: 12 }}>
               <defs>
                 <linearGradient id="blueBarGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#60a5fa" />
+                  <stop offset="0%" stopColor="#ff7a30" />
+                  <stop offset="100%" stopColor="#ff8a4c" />
                 </linearGradient>
                 <linearGradient id="amberBarGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#f59e0b" />
                   <stop offset="100%" stopColor="#fbbf24" />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-              <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 11 }} allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" horizontal={false} />
+              <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#737373", fontSize: 11 }} allowDecimals={false} />
               <YAxis type="category" dataKey="family" width={144} tickLine={false} axisLine={false} tick={<DemandRankTick ranksByFamily={ranksByFamily} />} />
-              <Tooltip content={<DemandTooltip />} cursor={{ fill: "rgba(37, 99, 235, 0.04)" }} />
+              <Tooltip content={<DemandTooltip />} cursor={{ fill: "rgba(255, 106, 26, 0.04)" }} />
               <Bar 
                 dataKey="demand" 
                 barSize={13}
