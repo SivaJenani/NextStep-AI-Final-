@@ -22,7 +22,7 @@ export default function SkillDnaSection({ profiles, selectedId, onSelect, onOpen
     return (
       <EmptyState
         title="Skill DNA will appear here"
-        message="Upload a resume or refresh recommendations to compare your skills against target roles."
+        message="Refresh recommendations to compare your skills against target roles."
       />
     );
   }
