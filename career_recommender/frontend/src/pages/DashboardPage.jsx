@@ -23,7 +23,7 @@ import { EmptyState } from "../components/dashboard/shared";
 import { buildDashboardModel, DEFAULT_FILTERS } from "../components/dashboard/model";
 
 export default function DashboardPage({ view = "dashboard" }) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [dashboard, setDashboard] = useState(null);
   const [profile, setProfile] = useState(null);
   const [message, setMessage] = useState("");
@@ -48,6 +48,12 @@ export default function DashboardPage({ view = "dashboard" }) {
   } : DEFAULT_FILTERS;
 
   useEffect(() => {
+    if (!token) {
+      // Guest: show the full layout with empty states; personal results need an account.
+      setMessage("You are browsing as a guest. Log in to see your own skills, readiness and progress here.");
+      setLoading(false);
+      return undefined;
+    }
     const loadDashboardAndProfile = async () => {
       setLoading(true);
       try {
@@ -89,7 +95,7 @@ export default function DashboardPage({ view = "dashboard" }) {
       }
     };
     loadDashboardAndProfile();
-  }, []);
+  }, [token]);
 
   const model = useMemo(() => buildDashboardModel(dashboard, filters), [dashboard, filters]);
 
@@ -178,6 +184,36 @@ export default function DashboardPage({ view = "dashboard" }) {
           <EmptyState title="Skill gap data unavailable" message="The dashboard could not load the current skill analysis. Try refreshing after the backend is running." />
         )}
         <SkillModal detail={skillDetail} onClose={() => setSkillDetail(null)} />
+        <ScrollToTopButton />
+      </div>
+    );
+  }
+
+  if (!token) {
+    // Guest: same page structure, but no scores or personal results of any kind.
+    const sections = [
+      ["Career journey", "Your roadmap milestones and next action"],
+      ["Career readiness", "Your readiness score and resume match"],
+      ["Skill gaps", "Skills your target roles ask for that you are missing"],
+      ["Recommended jobs", "Roles matched to your skills"],
+      ["Weekly learning goal", "Your weekly actions and progress"],
+      ["Recent activity", "What you did recently on Next Step AI"],
+      ["Achievements", "Badges you earn as you progress"],
+    ];
+    return (
+      <div className="dashboard-page">
+        {message && <div className="dashboard-message">{message}</div>}
+        <div className="dashboard-top-actions">
+          <DashboardFilters filters={filters} onChange={setFilters} onReset={profileFilters} model={model} />
+        </div>
+        <div className="dashboard-main-grid">
+          {sections.map(([title, hint]) => (
+            <section key={title} className="dashboard-card">
+              <div className="dashboard-section-heading compact"><span>{title}</span></div>
+              <EmptyState title="Available after you log in" message={hint} />
+            </section>
+          ))}
+        </div>
         <ScrollToTopButton />
       </div>
     );
