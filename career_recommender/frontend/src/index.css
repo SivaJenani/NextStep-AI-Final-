@@ -7403,3 +7403,5 @@ img[src*="next-step-ai-logo"].bg-night { padding: 3px; }
 .shell-logo-mark, .home-logo-mark { display: grid; place-items: center; border: 1px solid rgba(255,106,26,0.35); }
 .home-hero-circle img { width: 62% !important; height: 62% !important; }
 html[data-theme="dark"] .home-hero-circle img { filter: none !important; }
+#interview-overview .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(5.6rem, 1fr)); }
+#interview-overview .sm\:grid-cols-3 > div > p:first-child { letter-spacing: 0.04em; font-size: 0.6rem; white-space: nowrap; }
