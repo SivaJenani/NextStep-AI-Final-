@@ -169,7 +169,7 @@ import { SkeletonCard, SkeletonTimeline } from "../components/skeletons/PageSkel
 
 function EmptyState({ onCreateProfile }) {
   return (
-    <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] px-6 py-16 text-center shadow-[0_20px_45px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] px-6 py-16 text-center shadow-[0_20px_45px_rgba(17,17,17,0.06)]">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] bg-blue-50">
         <svg className="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path
@@ -194,14 +194,14 @@ function EmptyState({ onCreateProfile }) {
 function SummaryCard({ label, value, detail, tone = "slate" }) {
   const tones = {
     slate: {
-      panel: "border-slate-200 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] text-slate-900",
+      panel: "border-slate-200 bg-[linear-gradient(180deg,#ffffff,#fafafa)] text-slate-900",
       eyebrow: "text-slate-500",
       metric: "text-slate-950",
       detail: "text-slate-600",
       accent: "bg-slate-400",
     },
     blue: {
-      panel: "border-blue-200 bg-[linear-gradient(180deg,#ffffff,#eff6ff)] text-slate-900",
+      panel: "border-blue-200 bg-[linear-gradient(180deg,#ffffff,#fff4ec)] text-slate-900",
       eyebrow: "text-blue-700",
       metric: "text-slate-950",
       detail: "text-slate-600",
@@ -225,7 +225,7 @@ function SummaryCard({ label, value, detail, tone = "slate" }) {
   const selected = tones[tone] || tones.slate;
 
   return (
-    <article className={`overflow-hidden rounded-[24px] border p-5 shadow-[0_12px_28px_rgba(15,23,42,0.06)] ${selected.panel}`}>
+    <article className={`overflow-hidden rounded-[24px] border p-5 shadow-[0_12px_28px_rgba(17,17,17,0.06)] ${selected.panel}`}>
       <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${selected.eyebrow}`}>{label}</p>
       <p className={`mt-3 text-[2.2rem] font-bold tracking-[-0.05em] ${selected.metric}`}>{value}</p>
       {detail && <p className={`mt-2 text-sm leading-6 capitalize ${selected.detail}`}>{detail}</p>}
@@ -249,7 +249,7 @@ function ActionBar({ onPrint, onCopy, onExport }) {
     <div className="flex flex-wrap items-center gap-3">
       <button
         onClick={onPrint}
-        className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:bg-slate-50"
+        className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(17,17,17,0.05)] transition hover:border-slate-300 hover:bg-slate-50"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path
@@ -262,7 +262,7 @@ function ActionBar({ onPrint, onCopy, onExport }) {
       </button>
       <button
         onClick={handleCopy}
-        className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:bg-slate-50"
+        className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(17,17,17,0.05)] transition hover:border-slate-300 hover:bg-slate-50"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path
@@ -276,7 +276,7 @@ function ActionBar({ onPrint, onCopy, onExport }) {
       {onExport && (
         <button
           onClick={() => onExport("markdown")}
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(17,17,17,0.05)] transition hover:border-slate-300 hover:bg-slate-50"
         >
           Export MD
         </button>
@@ -622,7 +622,7 @@ function MockInterviewFocusOverlay({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm print:hidden">
-      <div className="relative w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.3)]">
+      <div className="relative w-full max-w-5xl rounded-[32px] overflow-hidden border border-slate-200 bg-white shadow-[0_30px_100px_rgba(17,17,17,0.3)]">
         <div className="max-h-[90vh] w-full overflow-y-auto">
         <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-night p-6 text-white">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1050,7 +1050,7 @@ function InterviewQuestionColumn({
                       </div>
 
                       <div className="grid gap-5 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
-                        <div className="rounded-[26px] border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
+                        <div className="rounded-[26px] border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_18px_45px_rgba(17,17,17,0.10)]">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Scorecard</p>
@@ -2104,7 +2104,7 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
   return (
     <section className="flex flex-col gap-6 print:gap-4">
       {/* PRACTICE ANALYTICS PANEL */}
-      <div id="interview-progress" className="card-panel order-5 overflow-hidden border-slate-200 bg-white text-slate-800 shadow-[0_18px_40px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 print:hidden">
+      <div id="interview-progress" className="card-panel order-5 overflow-hidden border-slate-200 bg-white text-slate-800 shadow-[0_18px_40px_rgba(17,17,17,0.06)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 print:hidden">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-blue-600">Practice Analytics Dashboard</p>
         <h3 className="mt-3 text-2xl font-bold text-slate-950 dark:text-slate-100">Your Rehearsal Performance</h3>
         
@@ -2147,8 +2147,8 @@ function InterviewPrepSection({ interviewPack, targetRole }) {
         </div>
       </div>
 
-      <div id="interview-overview" className="card-panel order-1 overflow-hidden border-slate-200 bg-white text-slate-950 shadow-[0_18px_45px_rgba(15,23,42,0.06)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 print:border-0 print:shadow-none print:p-0">
-        <div className="bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_24%)] p-6 dark:bg-slate-950">
+      <div id="interview-overview" className="card-panel order-1 overflow-hidden border-slate-200 bg-white text-slate-950 shadow-[0_18px_45px_rgba(17,17,17,0.06)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 print:border-0 print:shadow-none print:p-0">
+        <div className="bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(255, 122, 48,0.12),transparent_24%)] p-6 dark:bg-slate-950">
           <div className="rounded-[30px] border border-slate-200 bg-white/80 p-6 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
@@ -2763,7 +2763,7 @@ if (view === "interview") {
 
 return (
     <div ref={pageRef} className="space-y-6 print:space-y-4">
-      <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] p-6 shadow-[0_20px_45px_rgba(15,23,42,0.06)] print:border-0 print:shadow-none">
+      <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] p-6 shadow-[0_20px_45px_rgba(17,17,17,0.06)] print:border-0 print:shadow-none">
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div className="max-w-4xl">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">Career Path Generator</p>
@@ -2780,8 +2780,8 @@ return (
           </div>
 
           <div
-            className="rounded-[28px] border border-slate-200 p-6 text-white shadow-[0_24px_55px_rgba(15,23,42,0.16)] print:hidden"
-            style={{ background: "linear-gradient(135deg, rgba(15, 23, 42, 1), rgba(30, 41, 59, 0.94))" }}
+            className="rounded-[28px] border border-slate-200 p-6 text-white shadow-[0_24px_55px_rgba(17,17,17,0.16)] print:hidden"
+            style={{ background: "linear-gradient(135deg, rgba(17, 17, 17, 1), rgba(30, 41, 59, 0.94))" }}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Path controls</p>
             <form
@@ -2856,7 +2856,7 @@ return (
 
       {roadmap && (
         <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] print:block">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] print:border-0 print:shadow-none print:p-0">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] print:border-0 print:shadow-none print:p-0">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-coral">Route Options</p>
             <div className="mt-4 space-y-3">
               {roadmap.route_options.map((option, index) => (
@@ -2874,7 +2874,7 @@ return (
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] print:border-0 print:shadow-none print:p-0">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] print:border-0 print:shadow-none print:p-0">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-emerald-600">End-State Outcome</p>
             <div className="mt-4 rounded-[24px] border border-emerald-200 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,1))] p-5">
               <p className="text-sm leading-7 text-slate-700">{roadmap.outcome.readiness_summary}</p>
@@ -2911,7 +2911,7 @@ return (
       {roadmap && (
         <section className="grid gap-6 md:grid-cols-2">
           {/* Daily AI Mentor Card */}
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] flex flex-col justify-between">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] flex flex-col justify-between">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-blue-600">Daily AI Mentor Advice</p>
               <h3 className="mt-3 text-xl font-bold text-slate-950">Today's Guidance Suggestion</h3>
@@ -2925,7 +2925,7 @@ return (
           </div>
 
           {/* Achievements Card */}
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-emerald-600">Achievements & Badges</p>
             <h3 className="mt-3 text-xl font-bold text-slate-950">Your Unlocked Badges</h3>
             
@@ -2954,7 +2954,7 @@ return (
       {roadmap && progressData && (
         <section className="grid gap-6 md:grid-cols-2">
           {/* Weekly Goals */}
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-600">Weekly AI Goals</p>
             <h3 className="mt-3 text-xl font-bold text-slate-950">Week 1 & 2 Tasks</h3>
             
@@ -2981,7 +2981,7 @@ return (
           </div>
 
           {/* Smart Notifications & Alerts */}
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)]">
             <p className="font-mono text-xs uppercase tracking-[0.25em] text-red-500">Smart Notifications</p>
             <h3 className="mt-3 text-xl font-bold text-slate-950">Action Needed</h3>
             
@@ -3025,7 +3025,7 @@ return (
 
       {/* COMPANY READINESS RECOMMENDATIONS */}
       {roadmap && companies.length > 0 && (
-        <section className="rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] print:hidden">
+        <section className="rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-[0_18px_40px_rgba(17,17,17,0.06)] print:hidden">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400">Company Readiness Match</p>
           <h3 className="mt-3 text-2xl font-bold text-slate-950 dark:text-slate-100">Recommended Hiring Positions</h3>
           
