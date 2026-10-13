@@ -7380,3 +7380,7 @@ html[data-theme="dark"] .home-header, html[data-theme="dark"] .home-header-inner
 html[data-theme="dark"] .home-hero-circle { background: #1e1b19 !important; border: 2px solid #ff6a1a; box-shadow: 0 0 60px rgba(255,106,26,0.25) !important; }
 html[data-theme="dark"] .home-hero-circle img { filter: none !important; }
 html[data-theme="dark"] .home-eyebrow { color: #ff8a4c !important; }
+html[data-theme="dark"] h1.home-title { color: #f3efea !important; }
+html[data-theme="dark"] h1.home-title .home-accent { color: #ff6a1a !important; }
+html[data-theme="dark"] p.home-lead { color: #c9c1b8 !important; }
+html[data-theme="dark"] .home-hero-circle img { filter: hue-rotate(165deg) saturate(1.25) brightness(1.1) !important; }
