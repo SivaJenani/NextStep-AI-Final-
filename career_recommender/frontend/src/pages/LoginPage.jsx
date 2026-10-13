@@ -40,6 +40,9 @@ export default function LoginPage() {
       <section className="w-full max-w-4xl card-panel">
       <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">Welcome back</p>
       <h2 className="mt-3 font-display text-4xl font-bold text-slate-950">Sign in to your career cockpit</h2>
+      {location.state?.reason === "upload" && (
+        <p className="mt-3 text-sm font-semibold text-emerald-700">Log in or create an account to upload your resume.</p>
+      )}
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <div>
           <label className="field-label">Email</label>
