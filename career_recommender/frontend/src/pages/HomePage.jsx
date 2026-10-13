@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -17,7 +17,6 @@ export default function HomePage() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState("");
-  const vantaRef = useRef(null);
   const publicNavItems = [
     { label: "Dashboard", to: "/dashboard", match: "/dashboard" },
     { label: "Skill Gap", to: "/dashboard#skill-gap", match: "/dashboard#skill-gap" },
@@ -68,52 +67,8 @@ export default function HomePage() {
     };
   }, [user]);
 
-  useEffect(() => {
-    let vantaEffect;
-    const initVanta = () => {
-      if (!vantaEffect && window.VANTA && window.VANTA.GLOBE) {
-        vantaEffect = window.VANTA.GLOBE({
-          el: vantaRef.current,
-          mouseControls: true,
-          touchControls: true,
-          gyroControls: false,
-          minHeight: 200.00,
-          minWidth: 200.00,
-          scale: 1.00,
-          scaleMobile: 1.00,
-          size: 0.90,
-          color: 0x60a5fa,
-          color2: 0x3b82f6,
-          backgroundColor: 0x0f172a,
-          showLines: false,
-          showDots: false,
-        });
-      }
-    };
-
-    if (window.VANTA && window.VANTA.GLOBE) {
-      initVanta();
-    } else {
-      const checkVanta = setInterval(() => {
-        if (window.VANTA && window.VANTA.GLOBE) {
-          clearInterval(checkVanta);
-          initVanta();
-        }
-      }, 100);
-      setTimeout(() => clearInterval(checkVanta), 5000);
-    }
-
-    return () => {
-      if (vantaEffect) vantaEffect.destroy();
-    };
-  }, []);
-
   return (
-    <main className="home-page" style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
-      <div 
-        ref={vantaRef} 
-        style={{ position: "absolute", top: 0, left: "-400px", width: "calc(100% + 400px)", height: "100%", zIndex: 0 }} 
-      />
+    <main className="home-page" style={{ position: "relative", minHeight: "100vh" }}>
       <div className="home-shell" style={{ position: "relative", zIndex: 1 }}>
         <header className="home-header" aria-label="Primary navigation">
           <div className="home-header-inner">
@@ -207,22 +162,33 @@ export default function HomePage() {
           id="how-it-works"
           className="home-hero scroll-mt-8"
         >
-          <div className="flex flex-col justify-center max-w-[760px] px-6 sm:px-10 py-20 md:py-32 relative z-10">
-            <p className="text-blue-400 font-inter font-bold tracking-[0.25em] uppercase text-sm mb-5">
-              Next Step AI
-            </p>
-            <h1 className="font-sora text-4xl sm:text-5xl md:text-[3.5rem] font-extrabold text-white leading-[1.15] tracking-tight mb-6" style={{ textShadow: "0 4px 32px rgba(0,0,0,0.6)" }}>
-              Navigate careers with live job data, skill intelligence, and personalized guidance.
-            </h1>
-            <p className="font-inter text-lg sm:text-xl text-slate-300 leading-relaxed max-w-[640px] mb-10">
-              Discover real opportunities, understand exactly what skills are missing, and move from confusion to a focused action plan.
-            </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link to="/signup" className="inline-flex items-center justify-center rounded-full bg-[#00B4D8] px-8 py-3.5 text-base font-semibold text-[#03045E] shadow-lg shadow-cyan-500/30 transition-all hover:bg-[#90E0EF] hover:scale-[1.02]">
-                Launch your career workspace
-              </Link>
-              <Link to="/login" className="inline-flex items-center justify-center rounded-full border border-slate-600/60 bg-slate-800/40 backdrop-blur-md px-8 py-3.5 text-base font-semibold text-slate-200 transition-all hover:bg-slate-700/60 hover:border-slate-400 hover:text-white">
-                Sign in
+          <div className="home-hero-inner relative z-10 mx-auto grid w-full max-w-6xl items-center gap-10 px-6 py-16 sm:px-10 md:grid-cols-[1.2fr_0.8fr] md:py-24">
+            <div className="flex flex-col justify-center">
+              <p className="home-kicker mb-5 font-inter text-sm font-bold uppercase tracking-[0.25em]">
+                Next Step AI
+              </p>
+              <h1 className="home-title font-sora text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl md:text-[3.5rem]">
+                Navigate careers with <span className="home-accent">live job data</span>, skill intelligence, and personalized guidance.
+              </h1>
+              <p className="home-lead mt-6 max-w-[640px] font-inter text-lg leading-relaxed sm:text-xl">
+                Discover real opportunities, understand exactly what skills are missing, and move from confusion to a focused action plan.
+              </p>
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Link to="/signup" className="home-cta-primary">
+                  Launch your career workspace
+                </Link>
+                <Link to="/login" className="home-cta-secondary">
+                  Sign in
+                </Link>
+              </div>
+            </div>
+            <div className="home-hero-art" aria-hidden="true">
+              <div className="home-hero-circle">
+                <img src="/images/next-step-ai-logo.png" alt="" />
+              </div>
+              <Link to="/signup" className="home-hero-badge" tabIndex={-1}>
+                <span>Start here</span>
+                <span className="home-hero-badge-arrow">&darr;</span>
               </Link>
             </div>
           </div>
