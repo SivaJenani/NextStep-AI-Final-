@@ -1,0 +1,31 @@
+/* Profile dropdown: keep inside the sidebar/viewport (was clipped off the left edge) */
+.shell-sidebar-footer .shell-profile-dropdown {
+  left: 0;
+  right: auto;
+  min-width: 0;
+  width: max(100%, 14rem);
+  max-width: calc(100vw - 1.5rem);
+  transform-origin: bottom left;
+}
+.shell-layout.is-collapsed .shell-sidebar-footer .shell-profile-dropdown {
+  left: calc(100% + 0.75rem);
+  width: 15.5rem;
+}
+[data-theme="dark"] .shell-profile-dropdown { background: #1a1816; }
+[data-theme="dark"] .shell-profile-summary { border-bottom-color: rgba(70, 62, 55, 0.78); }
+
+/* Home: orange rotating globe (Vanta) behind the hero */
+.home-globe { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.home-globe canvas { pointer-events: auto; }
+@media (min-width: 768px) { .home-globe { left: -400px; width: calc(100% + 400px); opacity: 0.7; } }
+@media (max-width: 767px) { .home-globe { opacity: 0.45; } }
+
+/* Chatbot header logo: light chip in light theme, dark-theme mark (no white patch) in dark theme */
+.chat-logo-dark { display: none; }
+html[data-theme="dark"] .chat-logo-light { display: none !important; }
+html[data-theme="dark"] .chat-logo-dark { display: block; background: transparent !important; }
+
+/* Collapsed sidebar: centre the toggle, nav icons and login on one vertical line */
+.shell-layout.is-collapsed .shell-sidebar-label { display: none; }
+.shell-layout.is-collapsed .shell-sidebar-link svg { margin: 0 auto; flex: none; }
+.shell-layout.is-collapsed .shell-login-link { width: 3rem; min-width: 0; padding: 0; justify-self: center; justify-content: center; overflow: hidden; }
