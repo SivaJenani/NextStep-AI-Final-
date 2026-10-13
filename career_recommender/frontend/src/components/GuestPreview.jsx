@@ -61,10 +61,10 @@ function GuestPreview({ title, description, shell, variant }) {
   return <div className="flex w-full justify-center py-10">{card}</div>;
 }
 
-export default function ExploreRoute({ children, title, description, shell = false, variant = "results" }) {
+export default function ExploreRoute({ children, title, description, shell = false, variant = "results", guestLayout = false }) {
   const { token } = useAuth() || {};
   const location = useLocation();
-  if (token) {
+  if (token || guestLayout) {
     return children;
   }
   return <GuestPreview key={location.pathname} title={title} description={description} shell={shell} variant={variant} />;
