@@ -7373,3 +7373,10 @@ html[data-theme="dark"] .shell-logo-mark { background: rgba(255,106,26,0.18) !im
 }
 html[data-theme="dark"] .bg-slate-950, html[data-theme="dark"] .bg-slate-900.text-white:not(aside):not(main) { background-color: #ff6a1a !important; border-color: #ff6a1a !important; color: #ffffff !important; }
 html[data-theme="dark"] .border-slate-950 { border-color: #ff6a1a !important; }
+html[data-theme="dark"] .home-page { background: #141211 !important; color: #f3efea !important; }
+html[data-theme="dark"] .home-hero-copy h1 { color: #f3efea !important; }
+html[data-theme="dark"] .home-hero-copy > p:not(.home-eyebrow) { color: #c9c1b8 !important; }
+html[data-theme="dark"] .home-header, html[data-theme="dark"] .home-header-inner { background: #1a1816 !important; border-color: #35302b !important; }
+html[data-theme="dark"] .home-hero-circle { background: #1e1b19 !important; border: 2px solid #ff6a1a; box-shadow: 0 0 60px rgba(255,106,26,0.25) !important; }
+html[data-theme="dark"] .home-hero-circle img { filter: none !important; }
+html[data-theme="dark"] .home-eyebrow { color: #ff8a4c !important; }
