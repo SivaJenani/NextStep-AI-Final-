@@ -37,13 +37,13 @@ function MilestoneDot({ cx, cy, payload, readinessScore, nextMilestone }) {
   if (isNext) {
     return (
       <g key={`roadmap-dot-${payload.week}`}>
-        <circle cx={cx} cy={cy} r={10} fill="#2563eb" stroke="#ffffff" strokeWidth={2} style={{ filter: "drop-shadow(0 0 6px rgba(37, 99, 235, 0.4))" }} />
+        <circle cx={cx} cy={cy} r={10} fill="#ff6a1a" stroke="#ffffff" strokeWidth={2} style={{ filter: "drop-shadow(0 0 6px rgba(255, 106, 26, 0.4))" }} />
         <circle cx={cx} cy={cy} r={4} fill="#ffffff" />
       </g>
     );
   }
 
-  return <circle key={`roadmap-dot-${payload.week}`} cx={cx} cy={cy} r={5} fill="#cbd5e1" stroke="#ffffff" strokeWidth={2} />;
+  return <circle key={`roadmap-dot-${payload.week}`} cx={cx} cy={cy} r={5} fill="#d4d4d4" stroke="#ffffff" strokeWidth={2} />;
 }
 
 export default function RoadmapLearningProgress({ currentScore = 0, projectedScore = 0 }) {
@@ -66,9 +66,9 @@ export default function RoadmapLearningProgress({ currentScore = 0, projectedSco
       <div className="roadmap-learning-chart">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={learningProgress} margin={{ top: 10, right: 18, bottom: 2, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="week" tick={{ fill: "#64748b", fontSize: 11 }} />
-            <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 11 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+            <XAxis dataKey="week" tick={{ fill: "#737373", fontSize: 11 }} />
+            <YAxis domain={[0, 100]} tick={{ fill: "#737373", fontSize: 11 }} />
             <Tooltip content={<LearningTooltip />} />
             <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={3} dot={(props) => <MilestoneDot {...props} readinessScore={readinessScore} nextMilestone={nextMilestone} />} activeDot={{ r: 8, fill: "#10b981", stroke: "#ffffff", strokeWidth: 2 }} isAnimationActive animationDuration={950} />
           </LineChart>
