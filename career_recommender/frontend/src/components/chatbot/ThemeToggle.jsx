@@ -17,8 +17,8 @@ export default function ThemeToggle() {
     >
       <motion.div
         animate={{
-          backgroundColor: theme === 'light' ? '#2563eb' : 'transparent',
-          color: theme === 'light' ? '#ffffff' : '#64748b'
+          backgroundColor: theme === 'light' ? '#ff6a1a' : 'transparent',
+          color: theme === 'light' ? '#ffffff' : '#737373'
         }}
         className="rounded-full p-1.5 transition-colors"
       >
@@ -26,8 +26,8 @@ export default function ThemeToggle() {
       </motion.div>
       <motion.div
         animate={{
-          backgroundColor: theme === 'dark' ? '#2563eb' : 'transparent',
-          color: theme === 'dark' ? '#ffffff' : '#64748b'
+          backgroundColor: theme === 'dark' ? '#ff6a1a' : 'transparent',
+          color: theme === 'dark' ? '#ffffff' : '#737373'
         }}
         className="rounded-full p-1.5 transition-colors"
       >
