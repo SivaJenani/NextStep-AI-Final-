@@ -17,6 +17,7 @@ import SignupPage from "./pages/SignupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
+import GovernmentExamsPage from "./pages/GovernmentExamsPage";
 
 function AppShellRoutes() {
   return (
@@ -91,6 +92,14 @@ export default function App() {
           element={
             <ExploreRoute title="Recommendations" description="Get job and internship matches ranked for your resume.">
               <RecommendationsPage />
+            </ExploreRoute>
+          }
+        />
+        <Route
+          path="/government-exams"
+          element={
+            <ExploreRoute title="Government Exams" description="Find Union and State Government exams matched to your degree and eligibility preferences.">
+              <GovernmentExamsPage />
             </ExploreRoute>
           }
         />

@@ -35,6 +35,12 @@ class Profile(Base):
     mode = Column(String(30), nullable=False, default="job")
     desired_role = Column(String(120), nullable=True)
     resume_text = Column(Text, nullable=True)
+    degree = Column(String(120), nullable=True)
+    specialization = Column(String(120), nullable=True)
+    domicile_state = Column(String(120), nullable=True)
+    gender = Column(String(30), nullable=True)
+    reservation_category = Column(String(30), nullable=True)
+    age = Column(Integer, nullable=True)
     
     # Gamification Fields
     current_streak = Column(Integer, default=0, nullable=False)

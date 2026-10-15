@@ -6,6 +6,7 @@ const client = axios.create({
 
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem("career_token");
+  config._hadAuthToken = Boolean(token);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -15,11 +16,13 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && error.config?._hadAuthToken) {
       const isLoginRequest = error.config && error.config.url === "/auth/login";
-      localStorage.removeItem("career_token");
-      if (typeof window !== "undefined" && !isLoginRequest && window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (!isLoginRequest) {
+        localStorage.removeItem("career_token");
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);

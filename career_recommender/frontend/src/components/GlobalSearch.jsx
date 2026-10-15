@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutDashboard, User, Sparkles, Lightbulb, Map, FileText, Bookmark, Bot } from 'lucide-react';
+import { Search, LayoutDashboard, User, Sparkles, Lightbulb, Map, FileText, Bookmark, Bot, Landmark } from 'lucide-react';
 
 const SEARCH_ITEMS = [
   { label: 'Dashboard', to: '/dashboard', Icon: LayoutDashboard, keywords: ['home', 'main', 'overview'] },
   { label: 'Profile', to: '/profile', Icon: User, keywords: ['settings', 'account', 'me'] },
   { label: 'Recommendations', to: '/recommendations', Icon: Sparkles, keywords: ['jobs', 'matches', 'opportunities'] },
+  { label: 'Government Exams', to: '/government-exams', Icon: Landmark, keywords: ['government', 'upsc', 'ssc', 'psc', 'competitive exams'] },
   { label: 'Skill Gap', to: '/skill-gap', Icon: Lightbulb, keywords: ['skills', 'missing', 'learning'] },
   { label: 'Roadmap', to: '/roadmap', Icon: Map, keywords: ['path', 'plan', 'mock interview', 'practice'] },
   { label: 'Resume', to: '/resume', Icon: FileText, keywords: ['cv', 'upload', 'update resume'] },

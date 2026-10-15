@@ -2780,10 +2780,9 @@ return (
           </div>
 
           <div
-            className="rounded-[28px] border border-slate-200 p-6 text-white shadow-[0_24px_55px_rgba(17,17,17,0.16)] print:hidden"
-            style={{ background: "linear-gradient(135deg, rgba(17, 17, 17, 1), rgba(30, 41, 59, 0.94))" }}
+            className="rounded-[28px] border border-slate-200 bg-white p-6 text-slate-900 shadow-[0_20px_45px_rgba(17,17,17,0.07)] print:hidden"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Path controls</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-600">Path controls</p>
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -2804,15 +2803,15 @@ return (
                   onChange={(event) => setTargetRole(event.target.value)}
                   onBlur={(event) => setTargetRole(correctRoleSpelling(event.target.value))}
                   placeholder="Target role, e.g. Product Support Engineer"
-                  className="field-input capitalize"
+                  className="field-input capitalize !bg-white !text-slate-900"
                   aria-label="Target role"
                 />
               </div>
-              <button type="submit" disabled={loading} className="primary-button border-white bg-white text-slate-950 hover:bg-slate-100">
+              <button type="submit" disabled={loading} className="primary-button">
                 {loading ? "Generating path..." : "Generate path"}
               </button>
             </form>
-            <div className="mt-4 space-y-2 text-sm leading-6 text-slate-200">
+            <div className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
               <p>The roadmap adapts to the target role you enter here.</p>
               <p>Refresh when you want to compare a safer bridge role versus a direct target jump.</p>
             </div>

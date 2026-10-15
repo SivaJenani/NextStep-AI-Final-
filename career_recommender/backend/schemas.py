@@ -160,6 +160,10 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserNameUpdate(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=120)
+
+
 class AuthResponse(Token):
     user: UserOut
 
@@ -173,6 +177,12 @@ class ProfileCreate(BaseModel):
     mode: Literal["job", "internship"]
     desired_role: str | None = None
     resume_text: str | None = None
+    degree: str | None = None
+    specialization: str | None = None
+    domicile_state: str | None = None
+    gender: str | None = None
+    reservation_category: str | None = None
+    age: int | None = Field(default=None, ge=10, le=100)
 
     @model_validator(mode="after")
     def validate_role_matches_mode(self):
@@ -200,6 +210,12 @@ class ProfileOut(BaseModel):
     mode: str
     desired_role: str | None = None
     resume_text: str | None = None
+    degree: str | None = None
+    specialization: str | None = None
+    domicile_state: str | None = None
+    gender: str | None = None
+    reservation_category: str | None = None
+    age: int | None = None
     current_streak: int = 0
     highest_streak: int = 0
     last_active_date: str | None = None

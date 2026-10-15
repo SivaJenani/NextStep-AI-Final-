@@ -11,6 +11,12 @@ const emptyForm = {
   skills: "",
   domain: "",
   location: "",
+  degree: "",
+  specialization: "",
+  domicile_state: "",
+  gender: "",
+  reservation_category: "",
+  age: "",
   years_of_experience: "",
   experience_level: "",
   mode: "",
@@ -22,6 +28,23 @@ const suggestedSkills = [
   "REST API", "SQL", "PostgreSQL", "Git", "GitHub", "Docker",
   "AWS", "Azure", "HTML", "CSS", "Testing", "Data Analysis",
   "Communication", "Agile",
+];
+
+const ROLE_OPTIONS_BY_DOMAIN = {
+  "IT & Software": ["Backend Developer", "Frontend Developer", "Full Stack Developer", "DevOps Engineer", "Cybersecurity Analyst"],
+  "Data & Analytics": ["Data Analyst", "Business Analyst", "Machine Learning Engineer"],
+  "Design & UX": ["UX Designer", "Product Designer", "UI Designer"],
+  Marketing: ["Marketing Associate", "Digital Marketing Specialist", "SEO Specialist"],
+  Sales: ["Sales Executive", "Business Development Executive", "Account Manager"],
+  Finance: ["Financial Analyst", "Accountant", "Risk Analyst"],
+  Engineering: ["Software Engineer", "Systems Engineer", "Project Engineer"],
+  "HR & Ops": ["HR Associate", "Operations Analyst", "Project Coordinator"],
+};
+
+const ALL_ROLE_OPTIONS = [
+  "Backend Developer", "Frontend Developer", "Full Stack Developer", "Data Analyst",
+  "Machine Learning Engineer", "DevOps Engineer", "Cybersecurity Analyst", "Product Manager",
+  "UX Designer", "Marketing Associate", "Business Analyst",
 ];
 
 function splitSkills(value) {
@@ -256,8 +279,9 @@ function ComboBox({ value, onChange, options, placeholder, className = "", input
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth() || {};
+  const { user, setUser } = useAuth() || {};
   const [form, setForm] = useState(emptyForm);
+  const [fullName, setFullName] = useState(user?.full_name || "");
   const [alertEmail, setAlertEmail] = useState(user?.email || "");
   const [frequency, setFrequency] = useState("daily");
   const [loading, setLoading] = useState(true);
@@ -277,6 +301,12 @@ export default function ProfilePage() {
           skills: (data.skills || []).join(", "),
           domain: data.domain || "",
           location: data.location || "",
+          degree: data.degree || "",
+          specialization: data.specialization || "",
+          domicile_state: data.domicile_state || "",
+          gender: data.gender || "",
+          reservation_category: data.reservation_category || "",
+          age: data.age ?? "",
           years_of_experience: data.years_of_experience ?? "",
           experience_level: data.experience_level || "",
           mode: data.mode || "",
@@ -295,6 +325,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setProfilePhoto(localStorage.getItem(storageKey(user, "photo")) || "");
+    setFullName(user?.full_name || "");
   }, [user]);
 
   useEffect(() => () => window.clearTimeout(savedNoticeTimer.current), []);
@@ -303,6 +334,14 @@ export default function ProfilePage() {
   const completion = useMemo(() => computeCompletion(form), [form]);
   const modeMismatchMessage = getOpportunityModeMismatch(form.mode, form.desired_role);
   const targetLabel = titleCase(form.desired_role?.trim() || `${form.domain || "Career"} ${form.mode || "path"}`);
+  const roleOptions = useMemo(() => {
+    const values = ROLE_OPTIONS_BY_DOMAIN[form.domain] || ALL_ROLE_OPTIONS;
+    const options = values.map((value) => ({ value, label: value }));
+    if (form.desired_role?.trim() && !values.includes(form.desired_role.trim())) {
+      options.unshift({ value: form.desired_role.trim(), label: form.desired_role.trim() });
+    }
+    return options;
+  }, [form.domain, form.desired_role]);
 
   if (loading) {
     return <ProfileSkeleton />;
@@ -329,6 +368,12 @@ export default function ProfilePage() {
     const updatedForm = { ...form, desired_role: correctedRole };
     setForm(updatedForm);
     try {
+      const trimmedName = fullName.trim();
+      if (!trimmedName) {
+        throw new Error("Please enter your full name.");
+      }
+      const { data: updatedUser } = await client.patch("/auth/profile", { full_name: trimmedName });
+      setUser?.(updatedUser);
       await client.post("/profile/create", updatedForm);
       toast.success("Profile saved successfully.", {
         position: "top-center",
@@ -342,7 +387,7 @@ export default function ProfilePage() {
       window.clearTimeout(savedNoticeTimer.current);
       savedNoticeTimer.current = window.setTimeout(() => setShowSavedNotice(false), 2500);
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Unable to save profile.");
+      toast.error(error.response?.data?.detail || error.message || "Unable to save profile.");
     } finally {
       setSaving(false);
     }
@@ -528,24 +573,22 @@ export default function ProfilePage() {
           </div>
 
           <div className="mt-7 grid gap-5 lg:grid-cols-2">
+            <Field label="Full name" className="lg:col-span-2">
+              <input
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                className="field-input"
+                maxLength={120}
+                placeholder="Your full name"
+                required
+              />
+            </Field>
             <Field label="Desired role" className="lg:col-span-2">
               <ComboBox
                 inputClassName="capitalize"
                 value={form.desired_role}
                 onChange={(value) => setForm({ ...form, desired_role: correctRoleSpelling(value) })}
-                options={[
-                  { value: "Backend Developer", label: "Backend Developer" },
-                  { value: "Frontend Developer", label: "Frontend Developer" },
-                  { value: "Full Stack Developer", label: "Full Stack Developer" },
-                  { value: "Data Analyst", label: "Data Analyst" },
-                  { value: "Machine Learning Engineer", label: "Machine Learning Engineer" },
-                  { value: "DevOps Engineer", label: "DevOps Engineer" },
-                  { value: "Cybersecurity Analyst", label: "Cybersecurity Analyst" },
-                  { value: "Product Manager", label: "Product Manager" },
-                  { value: "UX Designer", label: "UX Designer" },
-                  { value: "Marketing Associate", label: "Marketing Associate" },
-                  { value: "Business Analyst", label: "Business Analyst" },
-                ]}
+                options={roleOptions}
                 placeholder="Choose a suggested role or type your own"
               />
             </Field>
@@ -566,7 +609,8 @@ export default function ProfilePage() {
                   { value: "HR & Ops", label: "HR & Ops" },
                   ...(form.domain &&
                   ![
-                    "IT & Software", "Data & Analytics", "Design & UX", "Marketing", "Sales", "Finance", "Engineering", "HR & Ops"
+                    "IT & Software", "Data & Analytics", "Design & UX",
+                    "Marketing", "Sales", "Finance", "Engineering", "HR & Ops"
                   ].includes(form.domain)
                     ? [{ value: form.domain, label: form.domain }]
                     : []),
@@ -592,6 +636,40 @@ export default function ProfilePage() {
               />
             </Field>
 
+            <Field label="Highest degree">
+              <CustomSelect
+                value={form.degree}
+                onChange={(val) => setForm({ ...form, degree: val })}
+                placeholder="Select your degree"
+                options={[
+                  { value: "10th Pass", label: "10th Pass" },
+                  { value: "12th Pass", label: "12th Pass" },
+                  { value: "Any Graduate", label: "Any Graduate" },
+                  { value: "B.Tech / B.E.", label: "B.Tech / B.E." },
+                  { value: "BCA / MCA", label: "BCA / MCA" },
+                  { value: "B.Com / M.Com", label: "B.Com / M.Com" },
+                  { value: "BA / MA", label: "BA / MA" },
+                  { value: "B.Sc / M.Sc", label: "B.Sc / M.Sc" },
+                ]}
+              />
+            </Field>
+
+            <Field label="Specialization">
+              <input className="field-input" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} placeholder="e.g. Computer Science" />
+            </Field>
+
+            <Field label="Domicile state">
+              <input className="field-input" value={form.domicile_state} onChange={(e) => setForm({ ...form, domicile_state: e.target.value })} placeholder="e.g. Maharashtra" />
+            </Field>
+
+            <Field label="Gender">
+              <CustomSelect value={form.gender} onChange={(val) => setForm({ ...form, gender: val })} placeholder="Prefer not to say" options={[{ value: "women", label: "Woman" }, { value: "men", label: "Man" }, { value: "other", label: "Other" }, { value: "prefer_not_to_say", label: "Prefer not to say" }]} />
+            </Field>
+
+            <Field label="Reservation category">
+              <CustomSelect value={form.reservation_category} onChange={(val) => setForm({ ...form, reservation_category: val })} placeholder="Select category" options={[{ value: "General", label: "General" }, { value: "EWS", label: "EWS" }, { value: "OBC-NCL", label: "OBC-NCL" }, { value: "SC", label: "SC" }, { value: "ST", label: "ST" }, { value: "PwBD", label: "PwBD" }, { value: "Ex-servicemen", label: "Ex-servicemen" }]} />
+            </Field>
+
             <Field label="Years of experience">
               <input
                 type="number"
@@ -602,6 +680,10 @@ export default function ProfilePage() {
                 onChange={(e) => setForm({ ...form, years_of_experience: e.target.value === "" ? "" : Number(e.target.value) })}
                 placeholder="0"
               />
+            </Field>
+
+            <Field label="Age">
+              <input type="number" min="10" max="100" className="field-input" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value === "" ? "" : Number(e.target.value) })} placeholder="e.g. 24" />
             </Field>
 
             <Field label="Experience level">

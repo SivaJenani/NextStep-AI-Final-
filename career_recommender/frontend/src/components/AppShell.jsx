@@ -13,6 +13,7 @@ import {
   Menu,
   MessageCircle,
   User,
+  Landmark,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ThemePanel from "./ThemePanel";
@@ -28,6 +29,7 @@ const privateNavItems = [
   { label: "Resume", to: "/resume", Icon: FileText },
   { label: "Bookmarks", to: "/bookmarks", Icon: Bookmark },
   { label: "AI Mentor", to: "/chatbot", Icon: MessageCircle },
+  { label: "Government Exams", to: "/government-exams", Icon: Landmark },
 ];
 
 function profileStorageKey(user, key) {

@@ -6608,6 +6608,23 @@ body {
     left: 0 !important;
     width: 100% !important;
   }
+
+  /* Keep the account menu inside the mobile drawer. The desktop rule anchors
+     it to the trigger's right edge, which can push the menu off-screen when
+     the drawer is narrower than its minimum width. */
+  .shell-sidebar-footer .shell-profile-dropdown {
+    bottom: calc(100% + 0.7rem);
+    left: 0;
+    max-width: calc(100vw - 2rem);
+    min-width: 0;
+    right: auto;
+    transform-origin: bottom left;
+    width: min(15.5rem, calc(100vw - 2rem));
+  }
+
+  .shell-sidebar-footer .shell-profile-dropdown.open {
+    transform: translateY(0) scale(1);
+  }
 }
 
 
@@ -7259,6 +7276,65 @@ img[src="/images/auth-people.png"] {
 .shell-sidebar-link.active svg { color: #ff6a1a; }
 .shell-sidebar-label { width: 9rem !important; }
 .shell-sidebar-footer { margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 0.6rem; }
+
+/* Government exam cards: keep variable dataset text aligned and readable. */
+.government-exams-grid > article {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.government-exams-grid > article > div:nth-child(2) {
+  flex: 1 1 auto;
+}
+.government-exams-grid > article h3,
+.government-exams-grid > article p {
+  overflow-wrap: anywhere;
+}
+.government-exams-grid > article a {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .government-exams-grid > article a {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+/* Keep the compact navigation icons centered in the narrow rail. */
+.shell-layout.is-collapsed .shell-sidebar-brand-row,
+.shell-layout.is-collapsed .shell-sidebar-nav,
+.shell-layout.is-collapsed .shell-sidebar-footer {
+  align-items: center;
+}
+.shell-layout.is-collapsed .shell-sidebar-brand-row {
+  justify-content: center;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.shell-layout.is-collapsed .shell-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+}
+.shell-layout.is-collapsed .shell-sidebar-link {
+  gap: 0 !important;
+  justify-content: center !important;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  width: 3rem !important;
+}
+.shell-layout.is-collapsed .shell-sidebar-label {
+  display: none !important;
+  width: 0 !important;
+}
+.shell-layout.is-collapsed .shell-sidebar-footer .shell-profile-trigger {
+  justify-content: center;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
 .shell-sidebar .shell-login-link {
   background: #111111 !important;
   border-radius: 10px !important;

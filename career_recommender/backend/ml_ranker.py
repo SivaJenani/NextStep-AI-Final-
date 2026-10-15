@@ -1195,6 +1195,21 @@ def _domain_alignment(domain: str, job_text: str) -> float:
     return 100.0 if domain in job_text else 65.0
 
 
+def _desired_role_relevance(target_role: str | None, job_title: str, job_description: str) -> float:
+    """Score how directly a job matches the user's requested role."""
+    role_tokens = _tokenize_resume_role(target_role)
+    if not role_tokens:
+        return 60.0
+
+    title_text = (job_title or "").lower()
+    description_text = (job_description or "").lower()
+    title_matches = sum(1 for token in role_tokens if token in title_text)
+    description_matches = sum(1 for token in role_tokens if token in description_text)
+    title_score = title_matches / len(role_tokens)
+    description_score = description_matches / len(role_tokens)
+    return round(min(100.0, (title_score * 80.0) + (description_score * 20.0)), 2)
+
+
 def _startup_alignment(job_text: str, company_name: str) -> float:
     haystack = f"{company_name} {job_text}".lower()
     matches = sum(1 for keyword in STARTUP_KEYWORDS if keyword in haystack)
@@ -1418,14 +1433,20 @@ def rank_jobs(profile, jobs: list[dict], top_n: int = 10) -> dict:
         ai_score = round(float(lexical_score) * 100, 2)
         experience_score = _experience_alignment(profile.experience_level, job_doc)
         domain_score = _domain_alignment(profile.domain, job_doc)
+        role_relevance = _desired_role_relevance(
+            getattr(profile, "desired_role", None),
+            job.get("job_title", ""),
+            job.get("job_description", ""),
+        )
         startup_score = _startup_alignment(job_doc, job.get("company_name", ""))
         fresher_score = _fresher_alignment(profile, job_doc)
         ranking_score = round(
-            (ai_score * 0.52)
-            + (skill_match * 0.18)
-            + (experience_score * 0.10)
-            + (startup_score * 0.10)
-            + (fresher_score * 0.10),
+            (ai_score * 0.42)
+            + (role_relevance * 0.25)
+            + (skill_match * 0.15)
+            + (experience_score * 0.08)
+            + (startup_score * 0.05)
+            + (fresher_score * 0.05),
             2,
         )
         readiness = compute_readiness(skill_match, ai_score, experience_score, domain_score, startup_score, fresher_score)
@@ -1440,6 +1461,7 @@ def rank_jobs(profile, jobs: list[dict], top_n: int = 10) -> dict:
             "matched_skills": matched[:6],
             "missing_skills": missing[:6],
             "job_readiness_score": readiness,
+            "desired_role_match_percentage": role_relevance,
             "startup_score": round(startup_score, 2),
             "fresher_score": round(fresher_score, 2),
             "is_startup_friendly": startup_score >= 80.0,

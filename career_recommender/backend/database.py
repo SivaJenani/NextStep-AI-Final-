@@ -59,6 +59,14 @@ SQLITE_SCHEMA_PATCHES = {
         "stipend_salary": "ALTER TABLE jobs ADD COLUMN stipend_salary VARCHAR(120)",
         "job_type": "ALTER TABLE jobs ADD COLUMN job_type VARCHAR(20) NOT NULL DEFAULT 'internal'",
     },
+    "profiles": {
+        "degree": "ALTER TABLE profiles ADD COLUMN degree VARCHAR(120)",
+        "specialization": "ALTER TABLE profiles ADD COLUMN specialization VARCHAR(120)",
+        "domicile_state": "ALTER TABLE profiles ADD COLUMN domicile_state VARCHAR(120)",
+        "gender": "ALTER TABLE profiles ADD COLUMN gender VARCHAR(30)",
+        "reservation_category": "ALTER TABLE profiles ADD COLUMN reservation_category VARCHAR(30)",
+        "age": "ALTER TABLE profiles ADD COLUMN age INTEGER",
+    },
 }
 
 

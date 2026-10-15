@@ -333,6 +333,7 @@ export default function RecommendationsPage() {
   const [activeTab, setActiveTab] = useState("desired");
   const [tailoringJob, setTailoringJob] = useState(null);
   const [dismissedJobIds, setDismissedJobIds] = useState(() => new Set());
+  const [filtersReady, setFiltersReady] = useState(false);
   const loggedViewBundle = useRef(null);
 
   const jobs = bundle?.jobs || [];
@@ -423,17 +424,29 @@ export default function RecommendationsPage() {
         // Ignore if no profile
       }
       
-      loadRecommendations({ 
-        signal: controller.signal, 
-        overrideRole: r, 
-        overrideLocation: l, 
-        overrideMode: m 
-      });
+      setFiltersReady(true);
     };
     
     init();
     return () => controller.abort();
   }, []);
+
+  // Refresh after the user pauses editing a filter. This keeps the results in
+  // sync without sending a request for every character typed into the role or
+  // location fields.
+  useEffect(() => {
+    if (!filtersReady) return undefined;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      loadRecommendations({ signal: controller.signal });
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [desiredRole, location, mode, filtersReady]);
 
   const saveJob = async (job) => {
     const jobId = job.external_job_id || job.job_id || `${job.company_name}-${job.job_title}`;

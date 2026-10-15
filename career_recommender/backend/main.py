@@ -463,6 +463,58 @@ def _normalize_chat_messages(messages: list[schemas.ChatMessage] | None) -> list
     return normalized[-6:]
 
 
+def _generate_offline_chat_answer(question: str, profile, recommendation_bundle: dict | None = None) -> str:
+    bundle = recommendation_bundle or {}
+    role = profile.desired_role or f"{profile.domain} {profile.mode}" or "your target role"
+    skills = [str(skill) for skill in (profile.skills or []) if str(skill).strip()]
+    gaps = [str(skill) for skill in bundle.get("missing_skills", []) if str(skill).strip()]
+    question_lower = question.lower()
+    lines = ["Offline career guidance is active because no AI provider is available."]
+
+    if any(term in question_lower for term in ("interview", "question", "mock")):
+        pack = generate_interview_pack(role, skills, profile.experience_level or "early career")
+        lines.extend(["", f"Practice these questions for {role}:"])
+        lines.extend(f"- {item}" for item in pack["technical_questions"][:3])
+        lines.extend(f"- {item}" for item in pack["hr_questions"][:2])
+    elif any(term in question_lower for term in ("job", "opening", "apply", "role")):
+        jobs = bundle.get("jobs", [])
+        if jobs:
+            lines.extend(["", f"Available matches for {role}:"])
+            lines.extend(
+                f"- {job.get('job_title', 'Role')} at {job.get('company_name') or 'Company'}"
+                for job in jobs[:3]
+            )
+        else:
+            lines.extend(["", f"I don't have role matches for {role} in the current results. Try a broader role or location."])
+    elif any(term in question_lower for term in ("skill", "learn", "gap", "missing")):
+        if gaps:
+            lines.extend(["", "Skills to prioritize from the current role matches:", f"- {', '.join(gaps[:5])}"])
+        elif skills:
+            lines.extend(["", f"Your profile lists: {', '.join(skills[:8])}.", "Add a target role or refresh recommendations to calculate role-specific gaps."])
+        else:
+            lines.extend(["", "Add skills and a target role to your profile to get a personalized skill-gap plan."])
+    elif "resume" in question_lower or "ats" in question_lower:
+        if profile.resume_text:
+            lines.extend(["", f"Your resume is available for a {role} review. Open Resume to see the audit and apply its highest-impact suggestions."])
+        else:
+            lines.extend(["", "Upload a PDF resume from the Resume page to get an ATS and skill-gap review."])
+    else:
+        lines.extend(["", f"For a {role} path, choose one role-relevant project, document its results, and compare its skills with current job matches."])
+        if skills:
+            lines.append(f"Your profile currently lists: {', '.join(skills[:8])}.")
+
+    return "\n".join(lines)
+
+
+def _offline_chat_result(question: str, profile, recommendation_bundle: dict | None = None) -> tuple[str, str, str, list[str]]:
+    return (
+        _generate_offline_chat_answer(question, profile, recommendation_bundle),
+        "offline",
+        "career-guide-rules-v1",
+        _generate_suggestions(question, profile, recommendation_bundle),
+    )
+
+
 def _build_openai_chat_context(
     question: str,
     profile,
@@ -676,33 +728,35 @@ async def generate_ai_chat_response(
                     },
                 )
                 if response.status_code == 404:
-                    raise HTTPException(
-                        status_code=503,
-                        detail=f"Ollama model '{model}' is not installed. Run 'ollama run {model}' and retry.",
-                    )
+                    logger.warning("Ollama model '%s' is not installed; using offline career guidance.", model)
+                    return _offline_chat_result(question, profile, recommendation_bundle)
                 response.raise_for_status()
                 answer = str(response.json().get("message", {}).get("content", "")).strip()
-        except HTTPException:
-            raise
-        except httpx.ConnectError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail="The local AI is not running. Start Ollama, then retry your message.",
-            ) from exc
         except httpx.TimeoutException as exc:
-            raise HTTPException(status_code=504, detail="The local AI took too long to respond. Please try again.") from exc
+            logger.warning("Ollama timed out; using offline career guidance: %s", exc)
+            return _offline_chat_result(question, profile, recommendation_bundle)
+        except httpx.ConnectError as exc:
+            logger.warning("Ollama is unavailable; using offline career guidance: %s", exc)
+            return _offline_chat_result(question, profile, recommendation_bundle)
+        except HTTPException as exc:
+            if exc.status_code == 404:
+                logger.warning("Ollama model '%s' is not installed; using offline career guidance.", model)
+                return _offline_chat_result(question, profile, recommendation_bundle)
+            raise
         except httpx.HTTPError as exc:
-            logger.exception("Ollama chatbot request failed: %s", exc)
-            raise HTTPException(status_code=502, detail="Ollama could not generate a response. Please try again.") from exc
+            logger.warning("Ollama request failed; using offline career guidance: %s", exc)
+            return _offline_chat_result(question, profile, recommendation_bundle)
         provider = "ollama"
     elif provider == "openai":
         api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
         if not api_key:
-            raise HTTPException(status_code=503, detail="Set OPENAI_API_KEY in backend/.env or choose Ollama for local AI.")
+            logger.warning("OPENAI_API_KEY is not configured; using offline career guidance.")
+            return _offline_chat_result(question, profile, recommendation_bundle)
         try:
             from openai import OpenAI
         except ImportError as exc:
-            raise HTTPException(status_code=503, detail="OpenAI SDK is not installed. Install backend requirements and restart.") from exc
+            logger.warning("OpenAI SDK is unavailable; using offline career guidance: %s", exc)
+            return _offline_chat_result(question, profile, recommendation_bundle)
 
         model = _get_openai_chat_model()
         try:
@@ -713,13 +767,13 @@ async def generate_ai_chat_response(
 
             answer = await asyncio.to_thread(_run_openai_request)
         except Exception as exc:
-            logger.exception("OpenAI chat request failed: %s", exc)
-            raise HTTPException(status_code=502, detail="OpenAI could not generate a response right now.") from exc
+            logger.warning("OpenAI chat failed; using offline career guidance: %s", exc)
+            return _offline_chat_result(question, profile, recommendation_bundle)
     else:
         raise HTTPException(status_code=503, detail="CHATBOT_AI_PROVIDER must be set to 'ollama' or 'openai'.")
 
     if not answer:
-        raise HTTPException(status_code=502, detail=f"{provider.title()} returned an empty response. Please try again.")
+        return _offline_chat_result(question, profile, recommendation_bundle)
 
     # Generate smart follow-up suggestions based on the question topic
     suggestions = _generate_suggestions(question, profile, recommendation_bundle)
@@ -1139,6 +1193,18 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
+@app.patch("/auth/profile", response_model=schemas.UserOut)
+def update_user_profile(
+    payload: schemas.UserNameUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.full_name = payload.full_name.strip()
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 @app.post("/auth/replace-account", response_model=schemas.AuthResponse)
 def replace_account(payload: schemas.UserReplaceRequest, db: Session = Depends(get_db)):
     user = authenticate_user(db, payload.email, payload.current_password)
@@ -1184,6 +1250,12 @@ def create_or_update_profile(
         profile.experience_level = payload.experience_level
         profile.mode = payload.mode
         profile.desired_role = payload.desired_role
+        profile.degree = payload.degree
+        profile.specialization = payload.specialization
+        profile.domicile_state = payload.domicile_state
+        profile.gender = payload.gender
+        profile.reservation_category = payload.reservation_category
+        profile.age = payload.age
         if payload.resume_text is not None:
             profile.resume_text = payload.resume_text
     else:
@@ -1197,6 +1269,12 @@ def create_or_update_profile(
             mode=payload.mode,
             desired_role=payload.desired_role,
             resume_text=payload.resume_text,
+            degree=payload.degree,
+            specialization=payload.specialization,
+            domicile_state=payload.domicile_state,
+            gender=payload.gender,
+            reservation_category=payload.reservation_category,
+            age=payload.age,
         )
         db.add(profile)
 
